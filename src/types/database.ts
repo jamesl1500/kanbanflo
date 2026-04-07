@@ -12,9 +12,236 @@ export type Database = {
   }
   public: {
     Tables: {
+      companies: {
+        Row: {
+          id: string
+          owner_id: string
+          name: string
+          slug: string
+          description: string | null
+          logo_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          owner_id: string
+          name: string
+          slug: string
+          description?: string | null
+          logo_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          owner_id?: string
+          name?: string
+          slug?: string
+          description?: string | null
+          logo_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      company_members: {
+        Row: {
+          id: string
+          company_id: string
+          user_id: string
+          role: 'owner' | 'admin' | 'member'
+          joined_at: string
+        }
+        Insert: {
+          id?: string
+          company_id: string
+          user_id: string
+          role?: 'owner' | 'admin' | 'member'
+          joined_at?: string
+        }
+        Update: {
+          id?: string
+          company_id?: string
+          user_id?: string
+          role?: 'owner' | 'admin' | 'member'
+          joined_at?: string
+        }
+        Relationships: []
+      }
+      workspaces: {
+        Row: {
+          id: string
+          company_id: string
+          owner_id: string
+          name: string
+          description: string | null
+          status: 'active' | 'archived'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          company_id: string
+          owner_id: string
+          name: string
+          description?: string | null
+          status?: 'active' | 'archived'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          company_id?: string
+          owner_id?: string
+          name?: string
+          description?: string | null
+          status?: 'active' | 'archived'
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      workspace_members: {
+        Row: {
+          id: string
+          workspace_id: string
+          user_id: string
+          role: 'admin' | 'member'
+          joined_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          user_id: string
+          role?: 'admin' | 'member'
+          joined_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          user_id?: string
+          role?: 'admin' | 'member'
+          joined_at?: string
+        }
+        Relationships: []
+      }
+      kanban_lists: {
+        Row: {
+          id: string
+          workspace_id: string
+          name: string
+          position: number
+          color: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          name: string
+          position?: number
+          color?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          name?: string
+          position?: number
+          color?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      kanban_cards: {
+        Row: {
+          id: string
+          list_id: string
+          workspace_id: string
+          title: string
+          description: string | null
+          position: number
+          assignee_id: string | null
+          priority: 'high' | 'medium' | 'low'
+          due_date: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          list_id: string
+          workspace_id: string
+          title: string
+          description?: string | null
+          position?: number
+          assignee_id?: string | null
+          priority?: 'high' | 'medium' | 'low'
+          due_date?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          list_id?: string
+          workspace_id?: string
+          title?: string
+          description?: string | null
+          position?: number
+          assignee_id?: string | null
+          priority?: 'high' | 'medium' | 'low'
+          due_date?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      files: {
+        Row: {
+          id: string
+          owner_id: string | null
+          file_name: string | null
+          file_desc: string | null
+          file_mime: string | null
+          file_size: number | null
+          file_bucket: string | null
+          file_folder: string | null
+          created_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          owner_id?: string | null
+          file_name?: string | null
+          file_desc?: string | null
+          file_mime?: string | null
+          file_size?: number | null
+          file_bucket?: string | null
+          file_folder?: string | null
+          created_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          owner_id?: string | null
+          file_name?: string | null
+          file_desc?: string | null
+          file_mime?: string | null
+          file_size?: number | null
+          file_bucket?: string | null
+          file_folder?: string | null
+          created_at?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          avatar_id: string | null
           bio: string | null
+          cover_photo_id: string | null
           created_at: string
           first_name: string
           id: string
@@ -25,7 +252,9 @@ export type Database = {
           user_name: string | null
         }
         Insert: {
+          avatar_id?: string | null
           bio?: string | null
+          cover_photo_id?: string | null
           created_at?: string
           first_name?: string
           id: string
@@ -36,7 +265,9 @@ export type Database = {
           user_name?: string | null
         }
         Update: {
+          avatar_id?: string | null
           bio?: string | null
+          cover_photo_id?: string | null
           created_at?: string
           first_name?: string
           id?: string

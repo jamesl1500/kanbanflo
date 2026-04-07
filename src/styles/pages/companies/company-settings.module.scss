@@ -1,0 +1,203 @@
+.page {
+    padding: 28px 32px;
+    max-width: 760px;
+}
+
+.section {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.sectionHeader {
+    padding: 18px 24px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.sectionTitle {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px 0;
+}
+
+.sectionDesc {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+.sectionBody {
+    padding: 24px;
+}
+
+/* Form */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.required {
+    color: #ef4444;
+    margin-left: 2px;
+}
+
+.optional {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    font-weight: 400;
+    margin-left: 4px;
+}
+
+.slugInputWrapper {
+    display: flex;
+    align-items: center;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    overflow: hidden;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:focus-within {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+}
+
+.slugPrefix {
+    padding: 0 12px;
+    font-size: 0.875rem;
+    color: #9ca3af;
+    background: #f9fafb;
+    border-right: 1px solid #e5e7eb;
+    white-space: nowrap;
+    height: 38px;
+    display: flex;
+    align-items: center;
+}
+
+.slugInput {
+    flex: 1;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+
+    &:focus {
+        outline: none;
+        box-shadow: none !important;
+    }
+}
+
+.fieldHint {
+    font-size: 0.78rem;
+    color: #9ca3af;
+}
+
+.fieldError {
+    font-size: 0.8rem;
+    color: #ef4444;
+}
+
+.textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: #111827;
+    resize: vertical;
+    font-family: inherit;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    background: #ffffff;
+    line-height: 1.5;
+    box-sizing: border-box;
+
+    &::placeholder {
+        color: #9ca3af;
+    }
+
+    &:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    &:disabled {
+        background: #f9fafb;
+        color: #9ca3af;
+        cursor: not-allowed;
+    }
+}
+
+.charCount {
+    font-size: 0.78rem;
+    color: #9ca3af;
+    text-align: right;
+}
+
+.charCountWarn {
+    color: #f59e0b;
+}
+
+.serverError {
+    font-size: 0.875rem;
+    color: #ef4444;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    padding: 10px 14px;
+}
+
+.saveSuccess {
+    font-size: 0.875rem;
+    color: #16a34a;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 6px;
+    padding: 10px 14px;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 4px;
+}
+
+/* Danger zone */
+.dangerSection {
+    border-color: #fecaca;
+}
+
+.dangerTitle {
+    color: #dc2626;
+}
+
+.dangerRow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.dangerLabel {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px 0;
+}
+
+.dangerHint {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin: 0;
+    max-width: 440px;
+}

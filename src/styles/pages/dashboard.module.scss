@@ -1,0 +1,85 @@
+.dashboardPage {
+    padding: 32px 40px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.dashboardHeader {
+    margin-bottom: 28px;
+
+    h1 {
+        font-size: 1.375rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 4px;
+    }
+
+    p {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+}
+
+.createCompanyCta {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    background: #ffffff;
+    border: 1.5px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 28px 32px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.07);
+    }
+}
+
+.ctaIcon {
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    background: #eef2ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6366f1;
+}
+
+.ctaBody {
+    flex: 1;
+
+    h2 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 6px;
+    }
+
+    p {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.5;
+        margin-bottom: 16px;
+        max-width: 520px;
+    }
+}
+
+.ctaButton {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #ffffff;
+    background: #6366f1;
+    text-decoration: none;
+    transition: background 0.15s ease;
+
+    &:hover {
+        background: #4f46e5;
+    }
+}

@@ -1,0 +1,680 @@
+@use "../../shared/global/global.module.scss" as *;
+
+// ─── Page shell ───────────────────────────────────────────────────────────────
+
+.page {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 50px - 42px); // viewport minus header and subnav
+    overflow: hidden;
+}
+
+.pageHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 28px 14px;
+    flex-shrink: 0;
+    border-bottom: 1px solid #f3f4f6;
+    gap: 16px;
+}
+
+.pageHeaderLeft {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pageTitle {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.pageDesc {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+.settingsBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: #f3f4f6;
+    color: #374151;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.15s ease;
+    flex-shrink: 0;
+
+    &:hover {
+        background: #e5e7eb;
+    }
+}
+
+// ─── Board ────────────────────────────────────────────────────────────────────
+
+.board {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 20px 28px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex: 1;
+    min-height: 0;
+
+    &::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: #f9fafb;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 99px;
+    }
+}
+
+// ─── List column ──────────────────────────────────────────────────────────────
+
+.list {
+    display: flex;
+    flex-direction: column;
+    width: 272px;
+    min-width: 272px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    max-height: 100%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.listOverlay {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    opacity: 0.92;
+}
+
+.listHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 12px 10px;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+    cursor: grab;
+
+    &:active { cursor: grabbing; }
+}
+
+.listHeaderLeft {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    flex: 1;
+}
+
+.listDot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.listName {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.listCount {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #9ca3af;
+    background: #f3f4f6;
+    padding: 1px 7px;
+    flex-shrink: 0;
+}
+
+.listActions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.listActionBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: background 0.1s ease, color 0.1s ease;
+
+    &:hover {
+        background: #e5e7eb;
+        color: #374151;
+    }
+}
+
+.listActionBtnDelete {
+    &:hover {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+}
+
+.renameInput {
+    flex: 1;
+    border: 1px solid #6366f1;
+    padding: 2px 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #111827;
+    background: #fff;
+    outline: none;
+    min-width: 0;
+}
+
+// ─── Card list ────────────────────────────────────────────────────────────────
+
+.cardList {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 40px;
+
+    &::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #e5e7eb;
+        border-radius: 99px;
+    }
+}
+
+// ─── Kanban card ──────────────────────────────────────────────────────────────
+
+.card {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 10px 8px 10px 6px;
+    cursor: default;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+        border-color: #c7d2fe;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
+
+        .cardActions {
+            opacity: 1;
+        }
+    }
+}
+
+.cardOverlay {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.cardDragHandle {
+    color: #d1d5db;
+    cursor: grab;
+    padding-top: 2px;
+    flex-shrink: 0;
+
+    &:active { cursor: grabbing; }
+}
+
+.cardContent {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.cardTitle {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #111827;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.cardDesc {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.cardMeta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.priorityBadge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    text-transform: capitalize;
+}
+
+.priorityHigh {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.priorityMedium {
+    background: #fffbeb;
+    color: #d97706;
+}
+
+.priorityLow {
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+.dueDate {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.7rem;
+    color: #9ca3af;
+}
+
+.cardActions {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.1s ease;
+}
+
+.cardActionBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: background 0.1s ease, color 0.1s ease;
+
+    &:hover {
+        background: #f3f4f6;
+        color: #374151;
+    }
+}
+
+.cardActionBtnDelete {
+    &:hover {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+}
+
+// ─── Add card ─────────────────────────────────────────────────────────────────
+
+.addCardSection {
+    padding: 6px 8px 8px;
+    flex-shrink: 0;
+}
+
+.addCardBtn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+    padding: 7px 8px;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.1s ease, color 0.1s ease;
+    text-align: left;
+
+    &:hover {
+        background: #f3f4f6;
+        color: #374151;
+    }
+}
+
+.addCardForm {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.addCardInput {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #6366f1;
+    font-size: 0.82rem;
+    color: #111827;
+    resize: none;
+    font-family: inherit;
+    line-height: 1.4;
+    background: #fff;
+    box-sizing: border-box;
+
+    &:focus { outline: none; }
+
+    &::placeholder { color: #9ca3af; }
+}
+
+.addCardFormActions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.addCardConfirm {
+    padding: 5px 12px;
+    background: #6366f1;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover:not(:disabled) { background: #4f46e5; }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.addCardCancel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: background 0.1s ease, color 0.1s ease;
+
+    &:hover { background: #f3f4f6; color: #374151; }
+}
+
+// ─── Add list column ──────────────────────────────────────────────────────────
+
+.addListColumn {
+    width: 240px;
+    min-width: 240px;
+    flex-shrink: 0;
+}
+
+.addListBtn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.6);
+    border: 2px dashed #d1d5db;
+    color: #6b7280;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    text-align: left;
+
+    &:hover {
+        border-color: #6366f1;
+        color: #6366f1;
+        background: #fafaff;
+    }
+}
+
+.addListForm {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.addListInput {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #6366f1;
+    font-size: 0.82rem;
+    color: #111827;
+    background: #fff;
+    font-family: inherit;
+    box-sizing: border-box;
+
+    &:focus { outline: none; }
+
+    &::placeholder { color: #9ca3af; }
+}
+
+.addListFormActions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.addListConfirm {
+    padding: 5px 12px;
+    background: #6366f1;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover:not(:disabled) { background: #4f46e5; }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.addListCancel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: background 0.1s ease, color 0.1s ease;
+
+    &:hover { background: #f3f4f6; color: #374151; }
+}
+
+// ─── Edit card modal ──────────────────────────────────────────────────────────
+
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 16px;
+}
+
+.modal {
+    background: #fff;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+}
+
+.modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f3f4f6;
+
+    h3 {
+        font-size: 0.975rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0;
+    }
+}
+
+.modalClose {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    cursor: pointer;
+
+    &:hover { background: #f3f4f6; color: #374151; }
+}
+
+.modalBody {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.modalRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.modalField {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.modalLabel {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.modalInput {
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    font-size: 0.875rem;
+    color: #111827;
+    font-family: inherit;
+    background: #fff;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+}
+
+.modalTextarea {
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    font-size: 0.875rem;
+    color: #111827;
+    font-family: inherit;
+    resize: vertical;
+    background: #fff;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+}
+
+.modalSelect {
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    font-size: 0.875rem;
+    color: #111827;
+    font-family: inherit;
+    background: #fff;
+    cursor: pointer;
+
+    &:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+}
+
+.modalFooter {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 14px 20px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.modalCancelBtn {
+    padding: 7px 16px;
+    background: #f3f4f6;
+    color: #374151;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover { background: #e5e7eb; }
+}
+
+.modalSaveBtn {
+    padding: 7px 16px;
+    background: #6366f1;
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover:not(:disabled) { background: #4f46e5; }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+}

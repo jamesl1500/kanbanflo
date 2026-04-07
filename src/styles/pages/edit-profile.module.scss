@@ -1,0 +1,288 @@
+@use "../shared/global/global.module.scss";
+
+// ── Page shell ────────────────────────────────────────────────────────────────
+
+.editProfilePage {
+    padding: 32px 0 48px;
+}
+
+.editProfileInner {
+    @extend .container;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 760px;
+    margin-bottom: 20px;
+}
+
+// ── Page header ───────────────────────────────────────────────────────────────
+
+.pageHeader {
+    h1 {
+        font-size: 1.375rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 4px;
+    }
+
+    p {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin: 0;
+    }
+}
+
+// ── Section card ─────────────────────────────────────────────────────────────
+
+.card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0;
+    padding: 24px;
+}
+
+.cardTitle {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px;
+}
+
+.cardDescription {
+    font-size: 0.8125rem;
+    color: #6b7280;
+    margin: 0 0 20px;
+}
+
+// ── Cover / Avatar upload area ────────────────────────────────────────────────
+
+.photoSection {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.coverUploadArea {
+    position: relative;
+    height: 180px;
+    background: linear-gradient(135deg, #e0e7ff 0%, #f0fdf4 100%);
+    border: 2px dashed #d1d5db;
+    border-radius: 0;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s;
+
+    &:hover .coverOverlay {
+        opacity: 1;
+    }
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+.coverOverlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    color: white;
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.coverPlaceholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 100%;
+    color: #9ca3af;
+    font-size: 0.8125rem;
+
+    &:hover {
+        color: #6b7280;
+    }
+}
+
+.avatarUploadRow {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    padding: 0 0 16px;
+    margin-top: -44px;
+    position: relative;
+    z-index: 1;
+}
+
+.avatarUploadArea {
+    position: relative;
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    border: 3px solid white;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.14);
+    overflow: hidden;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: box-shadow 0.15s;
+
+    &:hover .avatarOverlay {
+        opacity: 1;
+    }
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+.avatarOverlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s;
+    color: white;
+}
+
+.avatarPlaceholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+}
+
+.avatarHint {
+    font-size: 0.75rem;
+    color: #6b7280;
+    line-height: 1.4;
+
+    strong {
+        display: block;
+        font-size: 0.8125rem;
+        color: #374151;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+}
+
+.uploading {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: white;
+    letter-spacing: 0.02em;
+}
+
+// ── Form fields ───────────────────────────────────────────────────────────────
+
+.formSection {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+
+    @media (max-width: 560px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.fieldError {
+    font-size: 0.75rem;
+    color: #dc2626;
+}
+
+.charCount {
+    font-size: 0.6875rem;
+    color: #9ca3af;
+    align-self: flex-end;
+}
+
+.charCountWarning {
+    color: #d97706;
+}
+
+.textarea {
+    width: 100%;
+    min-height: 90px;
+    padding: 8px 10px;
+    font-size: 0.8125rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0;
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.5;
+    color: #111827;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+
+    &:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+    }
+
+    &::placeholder {
+        color: #9ca3af;
+    }
+}
+
+// ── Feedback ──────────────────────────────────────────────────────────────────
+
+.serverError {
+    font-size: 0.8125rem;
+    color: #dc2626;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    padding: 10px 14px;
+    margin-bottom: 20px;
+}
+
+.successMessage {
+    font-size: 0.8125rem;
+    color: #16a34a;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    padding: 10px 14px;
+    margin-bottom: 20px;
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 4px;
+}

@@ -1,24 +1,436 @@
 @use "../../shared/global/global.module.scss";
 
-.profileMainPage{
+// ── Page shell ────────────────────────────────────────────────────────────────
 
+.profileMainPage {
+    padding: 0px 0 0px 0px;
 }
 
-.profileMainPageInner{
+.profileMainPageInner {
     @extend .container;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
-.profileMainPageJumbotron{
+// ── Jumbotron ─────────────────────────────────────────────────────────────────
+
+.profileJumbotron {
     background: white;
-    padding: 20px;
     border: 1px solid #eee;
+    border-radius: 10px;
+    overflow: hidden;
+}
 
-    .profileMainPageJumbotronCover{
-        height: 300px;
-        border-bottom: 1px solid #eee;
+.profileJumbotronCover {
+    height: 200px;
+    background: linear-gradient(135deg, #e0e7ff 0%, #f0fdf4 100%);
+    border-bottom: 1px solid #eee;
+}
+
+.profileJumbotronUser {
+    padding: 0 24px 24px;
+}
+
+.profileAvatarRow {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    margin-top: -44px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 12px;
+}
+
+.profileAvatar {
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.14);
+    flex-shrink: 0;
+    object-fit: cover;
+    width: 100px;
+    height: 100px;
+}
+
+.profileIdentity {
+
+    h2 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 0;
+        color: #111;
+        line-height: 1.2;
     }
 
-    .profileMainPageJumbotronUsr{
-        
+    p {
+        margin: 3px 0 0;
+        font-size: 0.875rem;
+        color: #666;
     }
+}
+
+.profileBio {
+    margin: 0 0 16px;
+    font-size: 0.9rem;
+    color: #444;
+    line-height: 1.55;
+    max-width: 580px;
+}
+
+.profileActions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.profileActionPrimary {
+    padding: 7px 18px;
+    border-radius: 6px;
+    background: #0070f3;
+    color: white;
+    border: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+
+    &:hover {
+        background: #005ecc;
+    }
+}
+
+.profileActionSecondary {
+    padding: 7px 18px;
+    border-radius: 6px;
+    background: #f0f0f0;
+    color: #333;
+    border: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+
+    &:hover {
+        background: #e2e2e2;
+    }
+}
+
+// ── Stat cards ────────────────────────────────────────────────────────────────
+
+.profileStats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.profileStatCard {
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 20px 16px;
+    text-align: center;
+}
+
+.profileStatValue {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #111;
+    line-height: 1;
+}
+
+.profileStatLabel {
+    margin-top: 5px;
+    font-size: 0.7rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+}
+
+// ── Tab content area ──────────────────────────────────────────────────────────
+
+.profileContent {
+    // intentionally empty — flex gap from parent handles spacing
+}
+
+.profileTabsWrapper {
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.profileTabs {
+    display: flex;
+    border-bottom: 2px solid #f0f0f0;
+    padding: 0 16px;
+}
+
+.profileTab {
+    padding: 14px 18px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #777;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    cursor: pointer;
+    transition: color 0.15s;
+
+    &:hover {
+        color: #333;
+    }
+}
+
+.profileTabActive {
+    color: #0070f3;
+    border-bottom-color: #0070f3;
+}
+
+.profileTabContent {
+    padding: 24px;
+}
+
+// ── Feed ──────────────────────────────────────────────────────────────────────
+
+.feedList {
+    display: flex;
+    flex-direction: column;
+}
+
+.feedItem {
+    display: flex;
+    gap: 14px;
+    padding: 16px 0;
+    border-bottom: 1px solid #f5f5f5;
+
+    &:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    &:first-child {
+        padding-top: 0;
+    }
+}
+
+.feedItemIcon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f7f7f7;
+    border: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.feedItemContent {
+    flex: 1;
+    min-width: 0;
+}
+
+.feedItemText {
+    font-size: 0.875rem;
+    color: #222;
+    margin: 0 0 5px;
+    line-height: 1.5;
+}
+
+.feedItemWorkspaceTag {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 8px;
+    border-radius: 99px;
+    margin-bottom: 6px;
+}
+
+.feedItemMeta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.feedItemTime {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: #aaa;
+}
+
+.feedItemLikes {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: #aaa;
+}
+
+// ── Workspaces ────────────────────────────────────────────────────────────────
+
+.workspaceGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+}
+
+.workspaceCard {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 16px;
+    transition: box-shadow 0.15s;
+
+    &:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+    }
+}
+
+.workspaceCardHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.workspaceCardName {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: #111;
+}
+
+.workspaceCardBadge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #16a34a;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    padding: 2px 7px;
+    border-radius: 99px;
+}
+
+.workspaceCardDesc {
+    font-size: 0.8125rem;
+    color: #666;
+    line-height: 1.5;
+    margin: 0 0 12px;
+}
+
+.workspaceCardFooter {
+    display: flex;
+    gap: 16px;
+    font-size: 0.75rem;
+    color: #999;
+    border-top: 1px solid #f5f5f5;
+    padding-top: 10px;
+}
+
+// ── Tasks ─────────────────────────────────────────────────────────────────────
+
+.taskList {
+    display: flex;
+    flex-direction: column;
+}
+
+.taskItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f5f5f5;
+
+    &:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    &:first-child {
+        padding-top: 0;
+    }
+}
+
+.taskStatus {
+    flex-shrink: 0;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 99px;
+    white-space: nowrap;
+}
+
+.taskStatusCompleted {
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+.taskStatusInProgress {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.taskStatusTodo {
+    background: #f5f5f5;
+    color: #777;
+}
+
+.taskItemBody {
+    flex: 1;
+    min-width: 0;
+}
+
+.taskItemTitle {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #111;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.taskItemWorkspace {
+    display: block;
+    font-size: 0.75rem;
+    color: #aaa;
+    margin-top: 2px;
+}
+
+.taskItemRight {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+}
+
+.taskPriority {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    letter-spacing: 0.02em;
+}
+
+.taskPriorityHigh {
+    color: #dc2626;
+}
+
+.taskPriorityMedium {
+    color: #d97706;
+}
+
+.taskPriorityLow {
+    color: #16a34a;
+}
+
+.taskDue {
+    font-size: 0.75rem;
+    color: #aaa;
 }

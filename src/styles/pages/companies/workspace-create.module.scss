@@ -1,0 +1,113 @@
+@use "../../shared/global/global.module.scss" as *;
+
+.page {
+    min-height: calc(100vh - 50px - 42px);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 24px;
+    background: #f9fafb;
+}
+
+.card {
+    width: 100%;
+    max-width: 520px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 36px 40px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.cardHeader {
+    margin-bottom: 28px;
+
+    h1 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 6px;
+    }
+
+    p {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.5;
+        margin: 0;
+    }
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.required {
+    color: #ef4444;
+    margin-left: 2px;
+}
+
+.optional {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    font-weight: 400;
+    margin-left: 4px;
+}
+
+.fieldError {
+    font-size: 0.8rem;
+    color: #ef4444;
+}
+
+.textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    font-size: 0.875rem;
+    color: #111827;
+    resize: vertical;
+    font-family: inherit;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    background: #ffffff;
+    line-height: 1.5;
+    box-sizing: border-box;
+
+    &::placeholder { color: #9ca3af; }
+
+    &:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+}
+
+.charCount {
+    font-size: 0.78rem;
+    color: #9ca3af;
+    text-align: right;
+}
+
+.charCountWarn {
+    color: #f59e0b;
+}
+
+.serverError {
+    font-size: 0.875rem;
+    color: #ef4444;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    padding: 10px 14px;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 4px;
+}

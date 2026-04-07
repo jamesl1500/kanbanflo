@@ -1,0 +1,53 @@
+.companyNav {
+    position: fixed;
+    top: 50px; // sits directly beneath the 50px main header
+    left: 50px; // clears the fixed sidebar
+    right: 0;
+    height: 42px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+}
+
+.companyNavInner {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0 20px;
+    height: 100%;
+}
+
+.navItem {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    height: 30px;
+    border-radius: 6px;
+    font-size: 0.8375rem;
+    font-weight: 500;
+    color: #6b7280;
+    text-decoration: none;
+    transition: background 0.12s ease, color 0.12s ease;
+
+    svg {
+        flex-shrink: 0;
+    }
+
+    &:hover {
+        background: #f3f4f6;
+        color: #111827;
+    }
+}
+
+.navItemActive {
+    background: #eef2ff;
+    color: #6366f1;
+
+    &:hover {
+        background: #e0e7ff;
+        color: #6366f1;
+    }
+}
