@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,9 +13,12 @@ import { zodResolver } from "@hookform/resolvers/zod"
 
 const SignupForm = () => {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [serverError, setServerError] = useState<string | null>(null)
     const [confirmationMessage, setConfirmationMessage] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(false)
+
+    const invitedEmail = searchParams.get("email")?.trim().toLowerCase() ?? ""
 
     const { register, handleSubmit, formState: { errors } } = useForm<SignupFormData>({
         resolver: zodResolver(SignupFormSchema),
@@ -92,6 +96,7 @@ const SignupForm = () => {
                     placeholder="you@example.com"
                     autoComplete="email"
                     required
+                    defaultValue={invitedEmail}
                     {...register("email")}
                 />
                 {errors.email && <p className={styles.error}>{errors.email.message}</p>}
