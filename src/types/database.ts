@@ -221,6 +221,7 @@ export type Database = {
           id: string
           card_id: string
           title: string
+          description: string | null
           is_completed: boolean
           position: number
           due_date: string | null
@@ -232,6 +233,7 @@ export type Database = {
           id?: string
           card_id: string
           title: string
+          description?: string | null
           is_completed?: boolean
           position?: number
           due_date?: string | null
@@ -243,6 +245,7 @@ export type Database = {
           id?: string
           card_id?: string
           title?: string
+          description?: string | null
           is_completed?: boolean
           position?: number
           due_date?: string | null

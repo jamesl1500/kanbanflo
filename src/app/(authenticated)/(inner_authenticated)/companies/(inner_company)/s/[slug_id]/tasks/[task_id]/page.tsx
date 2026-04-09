@@ -71,7 +71,7 @@ export default async function TaskDetailsPage({ params }: Props) {
             .order("position", { ascending: true }),
         supabase
             .from("kanban_subtasks")
-            .select("id, title, is_completed, due_date, position")
+            .select("id, title, description, is_completed, due_date, position")
             .eq("card_id", task.id)
             .order("position", { ascending: true }),
     ]);

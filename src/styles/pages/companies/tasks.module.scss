@@ -366,6 +366,134 @@
     gap: 6px;
 }
 
+/* ── Task detail view (static/read mode) ─────────────────────── */
+
+.detailView {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.detailViewHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.detailBadges {
+    display: inline-flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.detailTitle {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.4;
+}
+
+.detailDescription {
+    margin: 0;
+    font-size: 0.86rem;
+    color: #374151;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.detailDescriptionEmpty {
+    margin: 0;
+    font-size: 0.86rem;
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.detailGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    border-top: 1px solid #f3f4f6;
+    padding-top: 14px;
+}
+
+.detailItem {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.detailLabel {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.detailValue {
+    font-size: 0.86rem;
+    font-weight: 500;
+    color: #111827;
+}
+
+.detailTagsRow {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-top: 1px solid #f3f4f6;
+    padding-top: 14px;
+}
+
+.tagsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tagChip {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+/* ── Subtask add form area ────────────────────────────────────── */
+
+.subtaskFormArea {
+    margin-top: 12px;
+    border-top: 1px solid #f3f4f6;
+    padding-top: 12px;
+}
+
+.subtaskForm {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    textarea {
+        min-height: 70px;
+    }
+}
+
+.subtaskDescription {
+    margin: 2px 0 0;
+    font-size: 0.77rem;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
 @media (max-width: 980px) {
     .statsRow {
         grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request" }, { status: 400 });
     }
 
-    const { company_slug, card_id, title, due_date } = parsed.data;
+    const { company_slug, card_id, title, description, due_date } = parsed.data;
 
     const { data: company } = await supabase
         .from("companies")
@@ -70,10 +70,11 @@ export async function POST(request: NextRequest) {
         .insert({
             card_id,
             title,
+            description: description ?? null,
             due_date: due_date ?? null,
             position: count ?? 0,
         })
-        .select("id, title, is_completed, due_date, position, created_at")
+        .select("id, title, description, is_completed, due_date, position, created_at")
         .single();
 
     if (createError || !subtask) {

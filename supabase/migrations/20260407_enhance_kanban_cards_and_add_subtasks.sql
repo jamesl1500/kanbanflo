@@ -35,6 +35,7 @@ create table if not exists public.kanban_subtasks (
     id uuid primary key default gen_random_uuid(),
     card_id uuid not null references public.kanban_cards(id) on delete cascade,
     title text not null,
+    description text,
     is_completed boolean not null default false,
     position integer not null default 0,
     due_date timestamptz,
@@ -52,3 +53,65 @@ create index if not exists idx_kanban_subtasks_due_date
 
 create index if not exists idx_kanban_subtasks_open
     on public.kanban_subtasks (card_id, is_completed);
+
+alter table public.kanban_subtasks enable row level security;
+
+create policy "kanban_subtasks_select"
+on public.kanban_subtasks for select
+using (
+    card_id in (
+        select id from public.kanban_cards
+        where workspace_id in (
+            select id from public.workspaces
+            where company_id in (
+                select company_id from public.company_members
+                where user_id = auth.uid()
+            )
+        )
+    )
+);
+
+create policy "kanban_subtasks_insert"
+on public.kanban_subtasks for insert
+with check (
+    card_id in (
+        select id from public.kanban_cards
+        where workspace_id in (
+            select id from public.workspaces
+            where company_id in (
+                select company_id from public.company_members
+                where user_id = auth.uid()
+            )
+        )
+    )
+);
+
+create policy "kanban_subtasks_update"
+on public.kanban_subtasks for update
+using (
+    card_id in (
+        select id from public.kanban_cards
+        where workspace_id in (
+            select id from public.workspaces
+            where company_id in (
+                select company_id from public.company_members
+                where user_id = auth.uid()
+            )
+        )
+    )
+);
+
+create policy "kanban_subtasks_delete"
+on public.kanban_subtasks for delete
+using (
+    card_id in (
+        select id from public.kanban_cards
+        where workspace_id in (
+            select id from public.workspaces
+            where company_id in (
+                select company_id from public.company_members
+                where user_id = auth.uid()
+            )
+        )
+    )
+);

@@ -14,6 +14,7 @@ export const CreateSubtaskSchema = z.object({
     company_slug: z.string().min(2).max(80),
     card_id: z.string().uuid("Invalid card ID"),
     title: z.string().min(1, "Subtask title is required").max(200),
+    description: z.string().max(2000).optional().nullable(),
     due_date: OptionalDateStringSchema,
 });
 
