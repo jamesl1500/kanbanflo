@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useMemo } from 'react';
 import {
     DndContext,
     DragOverlay,
@@ -24,12 +25,12 @@ import {
     Plus,
     DotsSixVertical,
     X,
-    DotsThree,
     CalendarBlank,
     Trash,
     PencilSimple,
 } from '@phosphor-icons/react';
 import styles from '@/styles/pages/companies/workspace-kanban.module.scss';
+import { createClient } from '@/utils/supabase/client';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -52,11 +53,85 @@ interface KanbanCard {
     due_date: string | null;
 }
 
+interface Subtask {
+    id: string;
+    title: string;
+    is_completed: boolean;
+    position: number;
+    due_date: string | null;
+}
+
 interface Props {
     workspaceId: string;
+    companySlug: string;
     initialLists: KanbanList[];
     initialCards: KanbanCard[];
-    canEdit: boolean;
+    canEditCards: boolean;
+    canManageLists: boolean;
+}
+
+function sortListsByPosition(items: KanbanList[]) {
+    return [...items].sort((left, right) => left.position - right.position);
+}
+
+function upsertList(items: KanbanList[], nextItem: KanbanList) {
+    const existingIndex = items.findIndex((item) => item.id === nextItem.id);
+
+    if (existingIndex === -1) {
+        return sortListsByPosition([...items, nextItem]);
+    }
+
+    const nextItems = [...items];
+    nextItems[existingIndex] = {
+        ...nextItems[existingIndex],
+        ...nextItem,
+    };
+
+    return sortListsByPosition(nextItems);
+}
+
+function removeListById(items: KanbanList[], id: string) {
+    return items.filter((item) => item.id !== id);
+}
+
+function upsertCard(items: KanbanCard[], nextItem: KanbanCard) {
+    const existingIndex = items.findIndex((item) => item.id === nextItem.id);
+
+    if (existingIndex === -1) {
+        return [...items, nextItem];
+    }
+
+    const nextItems = [...items];
+    nextItems[existingIndex] = {
+        ...nextItems[existingIndex],
+        ...nextItem,
+    };
+
+    return nextItems;
+}
+
+function removeCardById(items: KanbanCard[], id: string) {
+    return items.filter((item) => item.id !== id);
+}
+
+function upsertSubtask(items: Subtask[], nextItem: Subtask) {
+    const existingIndex = items.findIndex((item) => item.id === nextItem.id);
+
+    if (existingIndex === -1) {
+        return [...items, nextItem].sort((left, right) => left.position - right.position);
+    }
+
+    const nextItems = [...items];
+    nextItems[existingIndex] = {
+        ...nextItems[existingIndex],
+        ...nextItem,
+    };
+
+    return nextItems.sort((left, right) => left.position - right.position);
+}
+
+function removeSubtaskById(items: Subtask[], id: string) {
+    return items.filter((item) => item.id !== id);
 }
 
 // ─── Card Component ───────────────────────────────────────────────────────────
@@ -65,13 +140,13 @@ function SortableCard({
     card,
     canEdit,
     onDelete,
-    onEdit,
+    onOpen,
     isDragOverlay,
 }: {
     card: KanbanCard;
     canEdit: boolean;
     onDelete: (id: string) => void;
-    onEdit: (card: KanbanCard) => void;
+    onOpen: (card: KanbanCard) => void;
     isDragOverlay?: boolean;
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -100,7 +175,13 @@ function SortableCard({
             <div className={styles.cardDragHandle} {...attributes} {...listeners}>
                 <DotsSixVertical size={14} />
             </div>
-            <div className={styles.cardContent}>
+            <div
+                className={styles.cardContent}
+                onClick={() => !isDragOverlay && onOpen(card)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && !isDragOverlay && onOpen(card)}
+            >
                 <p className={styles.cardTitle}>{card.title}</p>
                 {card.description && <p className={styles.cardDesc}>{card.description}</p>}
                 <div className={styles.cardMeta}>
@@ -117,14 +198,14 @@ function SortableCard({
                 <div className={styles.cardActions}>
                     <button
                         className={styles.cardActionBtn}
-                        onClick={() => onEdit(card)}
-                        title="Edit card"
+                        onClick={(e) => { e.stopPropagation(); onOpen(card); }}
+                        title="View details"
                     >
                         <PencilSimple size={13} />
                     </button>
                     <button
                         className={`${styles.cardActionBtn} ${styles.cardActionBtnDelete}`}
-                        onClick={() => onDelete(card.id)}
+                        onClick={(e) => { e.stopPropagation(); onDelete(card.id); }}
                         title="Delete card"
                     >
                         <Trash size={13} />
@@ -140,20 +221,22 @@ function SortableCard({
 function SortableList({
     list,
     cards,
-    canEdit,
+    canEditCards,
+    canManageLists,
     onAddCard,
     onDeleteCard,
-    onEditCard,
+    onOpenCard,
     onDeleteList,
     onRenameList,
     isDragOverlay,
 }: {
     list: KanbanList;
     cards: KanbanCard[];
-    canEdit: boolean;
+    canEditCards: boolean;
+    canManageLists: boolean;
     onAddCard: (listId: string, title: string) => Promise<void>;
     onDeleteCard: (id: string) => void;
-    onEditCard: (card: KanbanCard) => void;
+    onOpenCard: (card: KanbanCard) => void;
     onDeleteList: (id: string) => void;
     onRenameList: (id: string, name: string) => void;
     isDragOverlay?: boolean;
@@ -206,7 +289,7 @@ function SortableList({
         >
             {/* List Header */}
             <div className={styles.listHeader}>
-                <div className={styles.listHeaderLeft} {...(canEdit ? { ...attributes, ...listeners } : {})}>
+                <div className={styles.listHeaderLeft} {...(canManageLists ? { ...attributes, ...listeners } : {})}>
                     <span className={styles.listDot} style={{ background: dotColor }} />
                     {renamingList ? (
                         <input
@@ -225,7 +308,7 @@ function SortableList({
                     )}
                     <span className={styles.listCount}>{cards.length}</span>
                 </div>
-                {canEdit && (
+                {canManageLists && (
                     <div className={styles.listActions}>
                         <button
                             className={styles.listActionBtn}
@@ -248,20 +331,21 @@ function SortableList({
             {/* Cards */}
             <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
                 <div className={styles.cardList}>
+                    {cards.length === 0 && (<div className={styles.emptyCardList}>No cards</div>)}
                     {cards.map((card) => (
                         <SortableCard
                             key={card.id}
                             card={card}
-                            canEdit={canEdit}
+                            canEdit={canEditCards}
                             onDelete={onDeleteCard}
-                            onEdit={onEditCard}
+                            onOpen={onOpenCard}
                         />
                     ))}
                 </div>
             </SortableContext>
 
             {/* Add Card */}
-            {canEdit && (
+            {canEditCards && (
                 <div className={styles.addCardSection}>
                     {addingCard ? (
                         <div className={styles.addCardForm}>
@@ -312,102 +396,339 @@ function SortableList({
     );
 }
 
-// ─── Edit Card Modal ──────────────────────────────────────────────────────────
+// ─── Card Detail Sidebar ──────────────────────────────────────────────────────
 
-function EditCardModal({
+function CardDetailSidebar({
     card,
+    lists,
+    companySlug,
+    canEdit,
     onClose,
     onSave,
+    onDelete,
 }: {
-    card: KanbanCard;
+    card: KanbanCard | null;
+    lists: KanbanList[];
+    companySlug: string;
+    canEdit: boolean;
     onClose: () => void;
-    onSave: (updates: Partial<KanbanCard>) => Promise<void>;
+    onSave: (id: string, updates: Partial<KanbanCard>) => Promise<void>;
+    onDelete: (id: string) => void;
 }) {
-    const [title, setTitle] = useState(card.title);
-    const [description, setDescription] = useState(card.description ?? '');
-    const [priority, setPriority] = useState<Priority>(card.priority);
-    const [dueDate, setDueDate] = useState(card.due_date ?? '');
+    const isOpen = card !== null;
+    const supabase = useMemo(() => createClient(), []);
+
+    const [title, setTitle] = useState(card?.title ?? '');
+    const [description, setDescription] = useState(card?.description ?? '');
+    const [priority, setPriority] = useState<Priority>(card?.priority ?? 'medium');
+    const [dueDate, setDueDate] = useState(card?.due_date?.slice(0, 10) ?? '');
     const [saving, setSaving] = useState(false);
+    const [dirty, setDirty] = useState(false);
+
+    const [subtasks, setSubtasks] = useState<Subtask[]>([]);
+    const [subtasksLoading, setSubtasksLoading] = useState(card !== null);
+    const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+    const [addingSubtask, setAddingSubtask] = useState(false);
+
+    const cardId = card?.id;
+
+    useEffect(() => {
+        if (!cardId) return;
+
+        fetch('/api/workspaces/cards/subtasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ card_id: cardId }),
+        })
+            .then((res) => (res.ok ? res.json() : { subtasks: [] }))
+            .then(({ subtasks: data }) => setSubtasks(data ?? []))
+            .finally(() => setSubtasksLoading(false));
+    }, [cardId]);
+
+    useEffect(() => {
+        if (!cardId) return;
+
+        const subtasksChannel = supabase
+            .channel(`card-subtasks:${cardId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'kanban_subtasks',
+                    filter: `card_id=eq.${cardId}`,
+                },
+                (payload) => {
+                    if (payload.eventType === 'DELETE') {
+                        const previousSubtask = payload.old as Pick<Subtask, 'id'>;
+                        setSubtasks((prev) => removeSubtaskById(prev, previousSubtask.id));
+                        return;
+                    }
+
+                    const nextSubtask = payload.new as Subtask;
+                    setSubtasks((prev) => upsertSubtask(prev, nextSubtask));
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(subtasksChannel);
+        };
+    }, [cardId, supabase]);
 
     async function handleSave() {
+        if (!card || !dirty) return;
         setSaving(true);
-        await onSave({ title, description: description || null, priority, due_date: dueDate || null });
+        await onSave(card.id, {
+            title,
+            description: description || null,
+            priority,
+            due_date: dueDate || null,
+        });
         setSaving(false);
-        onClose();
+        setDirty(false);
     }
 
+    async function handleAddSubtask(e: React.FormEvent) {
+        e.preventDefault();
+        if (!card || !newSubtaskTitle.trim()) return;
+        setAddingSubtask(true);
+        const res = await fetch('/api/companies/tasks/subtasks/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                company_slug: companySlug,
+                card_id: card.id,
+                title: newSubtaskTitle.trim(),
+            }),
+        });
+        if (res.ok) {
+            const { subtask } = await res.json();
+            setSubtasks((prev) => upsertSubtask(prev, subtask));
+            setNewSubtaskTitle('');
+        }
+        setAddingSubtask(false);
+    }
+
+    async function handleToggleSubtask(id: string, isCompleted: boolean) {
+        const previous = subtasks;
+        setSubtasks((prev) =>
+            prev.map((s) => (s.id === id ? { ...s, is_completed: isCompleted } : s))
+        );
+        const res = await fetch('/api/companies/tasks/subtasks/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, company_slug: companySlug, is_completed: isCompleted }),
+        });
+        if (!res.ok) setSubtasks(previous);
+    }
+
+    async function handleRemoveSubtask(id: string) {
+        const previous = subtasks;
+        setSubtasks((prev) => prev.filter((s) => s.id !== id));
+        const res = await fetch('/api/companies/tasks/subtasks/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, company_slug: companySlug }),
+        });
+        if (!res.ok) setSubtasks(previous);
+    }
+
+    const listName = card ? (lists.find((l) => l.id === card.list_id)?.name ?? '—') : '—';
+    const completedCount = subtasks.filter((s) => s.is_completed).length;
+    const progress = subtasks.length > 0 ? (completedCount / subtasks.length) * 100 : 0;
+
     return (
-        <div className={styles.modalOverlay} onClick={onClose}>
-            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-                <div className={styles.modalHeader}>
-                    <h3>Edit card</h3>
-                    <button className={styles.modalClose} onClick={onClose}><X size={16} /></button>
-                </div>
-                <div className={styles.modalBody}>
-                    <div className={styles.modalField}>
-                        <label className={styles.modalLabel}>Title</label>
-                        <input
-                            className={styles.modalInput}
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                        />
+        <div className={`${styles.sidebar}${isOpen ? ' ' + styles.sidebarOpen : ''}`}>
+            {/* Header */}
+            <div className={styles.sidebarHeader}>
+                {canEdit ? (
+                    <input
+                        className={styles.sidebarTitleInput}
+                        value={title}
+                        onChange={(e) => { setTitle(e.target.value); setDirty(true); }}
+                        placeholder="Card title"
+                    />
+                ) : (
+                    <h2 className={styles.sidebarTitle}>{card?.title}</h2>
+                )}
+                <button className={styles.sidebarClose} onClick={onClose} title="Close (Esc)">
+                    <X size={16} />
+                </button>
+            </div>
+
+            {/* Body */}
+            <div className={styles.sidebarBody}>
+                {/* Meta row */}
+                <div className={styles.sidebarSection}>
+                    <div className={styles.sidebarMeta}>
+                        <div className={styles.sidebarMetaItem}>
+                            <span className={styles.sidebarMetaLabel}>List</span>
+                            <span className={styles.sidebarMetaValue}>{listName}</span>
+                        </div>
+                        <div className={styles.sidebarMetaItem}>
+                            <span className={styles.sidebarMetaLabel}>Priority</span>
+                            {canEdit ? (
+                                <select
+                                    className={styles.sidebarMetaSelect}
+                                    value={priority}
+                                    onChange={(e) => { setPriority(e.target.value as Priority); setDirty(true); }}
+                                >
+                                    <option value="high">High</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            ) : (
+                                <span className={styles.sidebarMetaValue}>{card?.priority}</span>
+                            )}
+                        </div>
+                        <div className={styles.sidebarMetaItem}>
+                            <span className={styles.sidebarMetaLabel}>Due date</span>
+                            {canEdit ? (
+                                <input
+                                    type="date"
+                                    className={styles.sidebarMetaInput}
+                                    value={dueDate}
+                                    onChange={(e) => { setDueDate(e.target.value); setDirty(true); }}
+                                />
+                            ) : (
+                                <span className={styles.sidebarMetaValue}>
+                                    {card?.due_date
+                                        ? new Date(card.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                        : 'No due date'}
+                                </span>
+                            )}
+                        </div>
                     </div>
-                    <div className={styles.modalField}>
-                        <label className={styles.modalLabel}>Description</label>
+                </div>
+
+                {/* Description */}
+                <div className={styles.sidebarSection}>
+                    <p className={styles.sidebarSectionTitle}>Description</p>
+                    {canEdit ? (
                         <textarea
-                            rows={3}
-                            className={styles.modalTextarea}
+                            className={styles.sidebarDescTextarea}
                             value={description}
-                            onChange={(e) => setDescription(e.target.value)}
+                            onChange={(e) => { setDescription(e.target.value); setDirty(true); }}
+                            placeholder="Add a description…"
+                            rows={4}
                         />
-                    </div>
-                    <div className={styles.modalRow}>
-                        <div className={styles.modalField}>
-                            <label className={styles.modalLabel}>Priority</label>
-                            <select
-                                className={styles.modalSelect}
-                                value={priority}
-                                onChange={(e) => setPriority(e.target.value as Priority)}
-                            >
-                                <option value="high">High</option>
-                                <option value="medium">Medium</option>
-                                <option value="low">Low</option>
-                            </select>
-                        </div>
-                        <div className={styles.modalField}>
-                            <label className={styles.modalLabel}>Due date</label>
-                            <input
-                                type="date"
-                                className={styles.modalInput}
-                                value={dueDate}
-                                onChange={(e) => setDueDate(e.target.value)}
-                            />
-                        </div>
-                    </div>
+                    ) : description ? (
+                        <p className={styles.sidebarDesc}>{description}</p>
+                    ) : (
+                        <p className={styles.sidebarDescEmpty}>No description.</p>
+                    )}
                 </div>
-                <div className={styles.modalFooter}>
-                    <button className={styles.modalCancelBtn} onClick={onClose}>Cancel</button>
-                    <button
-                        className={styles.modalSaveBtn}
-                        onClick={handleSave}
-                        disabled={saving || !title.trim()}
-                    >
-                        {saving ? 'Saving…' : 'Save'}
-                    </button>
+
+                {/* Subtasks */}
+                <div className={styles.sidebarSection}>
+                    <div className={styles.sidebarSubtaskHeader}>
+                        <p className={styles.sidebarSectionTitle}>Subtasks</p>
+                        {subtasks.length > 0 && (
+                            <span className={styles.sidebarSubtaskProgress}>
+                                {completedCount}/{subtasks.length}
+                            </span>
+                        )}
+                    </div>
+
+                    {subtasks.length > 0 && (
+                        <div className={styles.sidebarProgressBar}>
+                            <div style={{ width: `${progress}%` }} />
+                        </div>
+                    )}
+
+                    {subtasksLoading ? (
+                        <p className={styles.sidebarEmpty}>Loading…</p>
+                    ) : (
+                        <>
+                            {subtasks.length > 0 && (
+                                <ul className={styles.sidebarSubtaskList}>
+                                    {[...subtasks]
+                                        .sort((a, b) => a.position - b.position)
+                                        .map((subtask) => (
+                                            <li key={subtask.id} className={styles.sidebarSubtaskItem}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={subtask.is_completed}
+                                                    onChange={(e) => handleToggleSubtask(subtask.id, e.target.checked)}
+                                                    disabled={!canEdit}
+                                                />
+                                                <p className={`${styles.sidebarSubtaskTitle}${subtask.is_completed ? ' ' + styles.sidebarSubtaskDone : ''}`}>
+                                                    {subtask.title}
+                                                </p>
+                                                {canEdit && (
+                                                    <button
+                                                        className={styles.sidebarSubtaskRemove}
+                                                        onClick={() => handleRemoveSubtask(subtask.id)}
+                                                        title="Remove"
+                                                    >
+                                                        <X size={11} />
+                                                    </button>
+                                                )}
+                                            </li>
+                                        ))}
+                                </ul>
+                            )}
+
+                            {subtasks.length === 0 && (
+                                <p className={styles.sidebarEmpty}>No subtasks yet.</p>
+                            )}
+
+                            {canEdit && (
+                                <form className={styles.sidebarAddSubtask} onSubmit={handleAddSubtask}>
+                                    <input
+                                        className={styles.sidebarAddSubtaskInput}
+                                        value={newSubtaskTitle}
+                                        onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                                        placeholder="New subtask…"
+                                        maxLength={200}
+                                    />
+                                    <button
+                                        className={styles.sidebarAddSubtaskBtn}
+                                        type="submit"
+                                        disabled={addingSubtask || !newSubtaskTitle.trim()}
+                                    >
+                                        {addingSubtask ? '…' : 'Add'}
+                                    </button>
+                                </form>
+                            )}
+                        </>
+                    )}
                 </div>
             </div>
+
+            {/* Footer */}
+            {canEdit && (
+                <div className={styles.sidebarFooter}>
+                    <button
+                        className={styles.sidebarDeleteBtn}
+                        onClick={() => card && onDelete(card.id)}
+                    >
+                        Delete card
+                    </button>
+                    <button
+                        className={styles.sidebarSaveBtn}
+                        onClick={handleSave}
+                        disabled={saving || !dirty || !title.trim()}
+                    >
+                        {saving ? 'Saving…' : 'Save changes'}
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
 
 // ─── Main Board ───────────────────────────────────────────────────────────────
 
-export default function WorkspaceKanban({ workspaceId, initialLists, initialCards, canEdit }: Props) {
+export default function WorkspaceKanban({ workspaceId, companySlug, initialLists, initialCards, canEditCards, canManageLists }: Props) {
+    const supabase = useMemo(() => createClient(), []);
     const [lists, setLists] = useState<KanbanList[]>(initialLists);
     const [cards, setCards] = useState<KanbanCard[]>(initialCards);
     const [activeCard, setActiveCard] = useState<KanbanCard | null>(null);
     const [activeList, setActiveList] = useState<KanbanList | null>(null);
-    const [editingCard, setEditingCard] = useState<KanbanCard | null>(null);
+    const [selectedCard, setSelectedCard] = useState<KanbanCard | null>(null);
+    const dragSourceListIdRef = useRef<string | null>(null);
 
     // Add list input
     const [addingList, setAddingList] = useState(false);
@@ -417,6 +738,66 @@ export default function WorkspaceKanban({ workspaceId, initialLists, initialCard
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
     );
+
+    // Close sidebar on Escape
+    useEffect(() => {
+        function onKeyDown(e: KeyboardEvent) {
+            if (e.key === 'Escape') setSelectedCard(null);
+        }
+        document.addEventListener('keydown', onKeyDown);
+        return () => document.removeEventListener('keydown', onKeyDown);
+    }, []);
+
+    useEffect(() => {
+        const workspaceChannel = supabase
+            .channel(`workspace-kanban:${workspaceId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'kanban_lists',
+                    filter: `workspace_id=eq.${workspaceId}`,
+                },
+                (payload) => {
+                    if (payload.eventType === 'DELETE') {
+                        const previousList = payload.old as Pick<KanbanList, 'id'>;
+                        setLists((prev) => removeListById(prev, previousList.id));
+                        setCards((prev) => prev.filter((card) => card.list_id !== previousList.id));
+                        return;
+                    }
+
+                    const nextList = payload.new as KanbanList;
+                    setLists((prev) => upsertList(prev, nextList));
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'kanban_cards',
+                    filter: `workspace_id=eq.${workspaceId}`,
+                },
+                (payload) => {
+                    if (payload.eventType === 'DELETE') {
+                        const previousCard = payload.old as Pick<KanbanCard, 'id'>;
+                        setCards((prev) => removeCardById(prev, previousCard.id));
+                        setSelectedCard((prev) => (prev?.id === previousCard.id ? null : prev));
+                        return;
+                    }
+
+                    const nextCard = payload.new as KanbanCard;
+                    setCards((prev) => upsertCard(prev, nextCard));
+                    setSelectedCard((prev) => (prev?.id === nextCard.id ? { ...prev, ...nextCard } : prev));
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(workspaceChannel);
+        };
+    }, [supabase, workspaceId]);
 
     // ── Helpers ──
 
@@ -441,7 +822,7 @@ export default function WorkspaceKanban({ workspaceId, initialLists, initialCard
 
         if (res.ok) {
             const { list } = await res.json();
-            setLists((prev) => [...prev, list]);
+            setLists((prev) => upsertList(prev, list));
         }
 
         setNewListName('');
@@ -484,6 +865,7 @@ export default function WorkspaceKanban({ workspaceId, initialLists, initialCard
     }
 
     function handleDeleteCard(id: string) {
+        if (selectedCard?.id === id) setSelectedCard(null);
         setCards((prev) => prev.filter((c) => c.id !== id));
         fetch('/api/workspaces/cards/delete', {
             method: 'POST',
@@ -492,15 +874,13 @@ export default function WorkspaceKanban({ workspaceId, initialLists, initialCard
         });
     }
 
-    async function handleSaveCard(updates: Partial<KanbanCard>) {
-        if (!editingCard) return;
-        setCards((prev) =>
-            prev.map((c) => (c.id === editingCard.id ? { ...c, ...updates } : c))
-        );
+    async function handleSaveCard(id: string, updates: Partial<KanbanCard>) {
+        setCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
+        setSelectedCard((prev) => (prev?.id === id ? { ...prev, ...updates } : prev));
         await fetch('/api/workspaces/cards/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: editingCard.id, ...updates }),
+            body: JSON.stringify({ id, ...updates }),
         });
     }
 
@@ -510,8 +890,10 @@ export default function WorkspaceKanban({ workspaceId, initialLists, initialCard
         const { active } = event;
         if (active.data.current?.type === 'card') {
             setActiveCard(active.data.current.card);
+            dragSourceListIdRef.current = (active.data.current.card as KanbanCard).list_id;
         } else if (active.data.current?.type === 'list') {
             setActiveList(active.data.current.list);
+            dragSourceListIdRef.current = null;
         }
     }
 
@@ -530,19 +912,16 @@ export default function WorkspaceKanban({ workspaceId, initialLists, initialCard
 
         if (!isActiveCard) return;
 
-        // Card dragged over another card
         if (isActiveCard && isOverCard) {
-            const activeCard = cards.find((c) => c.id === activeId)!;
+            const activeCardObj = cards.find((c) => c.id === activeId)!;
             const overCard = cards.find((c) => c.id === overId)!;
-
-            if (activeCard.list_id !== overCard.list_id) {
+            if (activeCardObj.list_id !== overCard.list_id) {
                 setCards((prev) =>
                     prev.map((c) => (c.id === activeId ? { ...c, list_id: overCard.list_id } : c))
                 );
             }
         }
 
-        // Card dragged over a list (empty list drop target)
         if (isActiveCard && isOverList) {
             setCards((prev) =>
                 prev.map((c) => (c.id === activeId ? { ...c, list_id: overId } : c))
@@ -555,12 +934,20 @@ export default function WorkspaceKanban({ workspaceId, initialLists, initialCard
         setActiveCard(null);
         setActiveList(null);
 
-        if (!over || active.id === over.id) return;
+        if (!over) {
+            dragSourceListIdRef.current = null;
+            return;
+        }
 
         const activeId = active.id as string;
         const overId = over.id as string;
 
-        // List reorder
+        // For list reordering, dropping over the same item is a no-op.
+        if (active.data.current?.type === 'list' && activeId === overId) {
+            dragSourceListIdRef.current = null;
+            return;
+        }
+
         if (active.data.current?.type === 'list') {
             const oldIdx = lists.findIndex((l) => l.id === activeId);
             const newIdx = lists.findIndex((l) => l.id === overId);
@@ -580,45 +967,86 @@ export default function WorkspaceKanban({ workspaceId, initialLists, initialCard
             return;
         }
 
-        // Card reorder within same or different list
         if (active.data.current?.type === 'card') {
-            const activeCardObj = cards.find((c) => c.id === activeId)!;
-            const overCardObj = cards.find((c) => c.id === overId);
-            const overListId = overCardObj ? overCardObj.list_id : overId;
+            const activeCardObj = cards.find((c) => c.id === activeId);
+            if (!activeCardObj) {
+                dragSourceListIdRef.current = null;
+                return;
+            }
 
-            const listCards = cards
-                .filter((c) => c.list_id === overListId)
+            const sourceListId = dragSourceListIdRef.current ?? (active.data.current?.card as KanbanCard).list_id;
+            const overType = over.data.current?.type;
+            const overCardObj = overType === 'card' ? cards.find((c) => c.id === overId) : undefined;
+
+            let destinationListId = activeCardObj.list_id;
+            if (overType === 'card' && overCardObj) {
+                destinationListId = overCardObj.list_id;
+            } else if (overType === 'list') {
+                destinationListId = overId;
+            }
+
+            // Build destination order from cards excluding the moved card, then insert at the drop index.
+            const destinationBefore = cards
+                .filter((c) => c.list_id === destinationListId && c.id !== activeId)
                 .sort((a, b) => a.position - b.position);
 
-            const fromIdx = listCards.findIndex((c) => c.id === activeId);
-            const toIdx = overCardObj
-                ? listCards.findIndex((c) => c.id === overId)
-                : listCards.length;
+            const insertIndex = overType === 'card' && overId !== activeId
+                ? destinationBefore.findIndex((c) => c.id === overId)
+                : destinationBefore.length;
 
-            let reorderedList = fromIdx >= 0
-                ? arrayMove(listCards, fromIdx, toIdx)
-                : [...listCards, { ...activeCardObj, list_id: overListId }];
+            const safeInsertIndex = insertIndex < 0 ? destinationBefore.length : insertIndex;
 
-            reorderedList = reorderedList.map((c, i) => ({
-                ...c,
-                list_id: overListId,
-                position: i,
+            const destinationAfter = [
+                ...destinationBefore.slice(0, safeInsertIndex),
+                { ...activeCardObj, list_id: destinationListId },
+                ...destinationBefore.slice(safeInsertIndex),
+            ].map((card, index) => ({
+                ...card,
+                list_id: destinationListId,
+                position: index,
             }));
 
+            const sourceAfter = cards
+                .filter((c) => c.list_id === sourceListId && c.id !== activeId)
+                .sort((a, b) => a.position - b.position)
+                .map((card, index) => ({
+                    ...card,
+                    position: index,
+                }));
+
             setCards((prev) => {
-                const others = prev.filter((c) => c.list_id !== overListId || c.id === activeId);
-                const withoutActive = others.filter((c) => c.id !== activeId);
-                return [...withoutActive, ...reorderedList];
+                const untouched = prev.filter(
+                    (c) => c.list_id !== sourceListId && c.list_id !== destinationListId
+                );
+
+                if (sourceListId === destinationListId) {
+                    return [...untouched, ...destinationAfter];
+                }
+
+                return [...untouched, ...sourceAfter, ...destinationAfter];
             });
 
             fetch('/api/workspaces/cards/reorder', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    list_id: overListId,
-                    ordered_ids: reorderedList.map((c) => c.id),
+                    list_id: destinationListId,
+                    ordered_ids: destinationAfter.map((c) => c.id),
                 }),
             });
+
+            if (sourceListId !== destinationListId) {
+                fetch('/api/workspaces/cards/reorder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        list_id: sourceListId,
+                        ordered_ids: sourceAfter.map((c) => c.id),
+                    }),
+                });
+            }
+
+            dragSourceListIdRef.current = null;
         }
     }
 
@@ -640,10 +1068,11 @@ export default function WorkspaceKanban({ workspaceId, initialLists, initialCard
                                 key={list.id}
                                 list={list}
                                 cards={cardsForList(list.id)}
-                                canEdit={canEdit}
+                                canEditCards={canEditCards}
+                                canManageLists={canManageLists}
                                 onAddCard={handleAddCard}
                                 onDeleteCard={handleDeleteCard}
-                                onEditCard={setEditingCard}
+                                onOpenCard={setSelectedCard}
                                 onDeleteList={handleDeleteList}
                                 onRenameList={handleRenameList}
                             />
@@ -651,7 +1080,7 @@ export default function WorkspaceKanban({ workspaceId, initialLists, initialCard
                     </SortableContext>
 
                     {/* Add List */}
-                    {canEdit && (
+                    {canManageLists && (
                         <div className={styles.addListColumn}>
                             {addingList ? (
                                 <div className={styles.addListForm}>
@@ -701,7 +1130,7 @@ export default function WorkspaceKanban({ workspaceId, initialLists, initialCard
                             card={activeCard}
                             canEdit={false}
                             onDelete={() => {}}
-                            onEdit={() => {}}
+                            onOpen={() => {}}
                             isDragOverlay
                         />
                     )}
@@ -709,10 +1138,11 @@ export default function WorkspaceKanban({ workspaceId, initialLists, initialCard
                         <SortableList
                             list={activeList}
                             cards={cardsForList(activeList.id)}
-                            canEdit={false}
+                            canEditCards={false}
+                            canManageLists={false}
                             onAddCard={async () => {}}
                             onDeleteCard={() => {}}
-                            onEditCard={() => {}}
+                            onOpenCard={() => {}}
                             onDeleteList={() => {}}
                             onRenameList={() => {}}
                             isDragOverlay
@@ -721,13 +1151,17 @@ export default function WorkspaceKanban({ workspaceId, initialLists, initialCard
                 </DragOverlay>
             </DndContext>
 
-            {editingCard && (
-                <EditCardModal
-                    card={editingCard}
-                    onClose={() => setEditingCard(null)}
-                    onSave={handleSaveCard}
-                />
-            )}
+            <CardDetailSidebar
+                key={selectedCard?.id ?? 'closed'}
+                card={selectedCard}
+                lists={lists}
+                companySlug={companySlug}
+                canEdit={canEditCards}
+                onClose={() => setSelectedCard(null)}
+                onSave={handleSaveCard}
+                onDelete={handleDeleteCard}
+            />
         </>
     );
 }
+

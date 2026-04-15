@@ -5,6 +5,7 @@
 .page {
     display: flex;
     flex-direction: column;
+    width: 100%;
     height: calc(100vh - 50px - 42px); // viewport minus header and subnav
     overflow: hidden;
 }
@@ -13,10 +14,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    width: 100%;
     padding: 18px 28px 14px;
     flex-shrink: 0;
     border-bottom: 1px solid #f3f4f6;
     gap: 16px;
+    box-sizing: border-box;
 }
 
 .pageHeaderLeft {
@@ -95,6 +98,13 @@
     max-height: 100%;
     overflow: hidden;
     flex-shrink: 0;
+}
+
+.emptyCardList {
+    font-size: 0.82rem;
+    color: #9ca3af;
+    text-align: center;
+    padding: 20px 0;
 }
 
 .listOverlay {
@@ -349,6 +359,8 @@
 .addCardSection {
     padding: 6px 8px 8px;
     flex-shrink: 0;
+    border-top: 1px solid #e5e7eb;
+
 }
 
 .addCardBtn {
@@ -677,4 +689,388 @@
 
     &:hover:not(:disabled) { background: #4f46e5; }
     &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+// ─── Card content clickable ───────────────────────────────────────────────────
+
+.cardContent {
+    cursor: pointer;
+}
+
+// ─── Card detail sidebar ──────────────────────────────────────────────────────
+
+.sidebar {
+    position: fixed;
+    top: 50px;
+    right: 0;
+    width: 420px;
+    height: calc(100vh - 50px);
+    background: #ffffff;
+    border-left: 1px solid #e5e7eb;
+    box-shadow: -4px 0 32px rgba(0, 0, 0, 0.08);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.sidebarOpen {
+    transform: translateX(0);
+}
+
+.sidebarHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    border-bottom: 1px solid #f3f4f6;
+    flex-shrink: 0;
+}
+
+.sidebarTitleInput {
+    flex: 1;
+    font-size: 0.97rem;
+    font-weight: 700;
+    color: #111827;
+    border: 1px solid #e5e7eb;
+    padding: 5px 8px;
+    font-family: inherit;
+    background: #f9fafb;
+    line-height: 1.4;
+
+    &:focus {
+        outline: none;
+        border-color: #6366f1;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+}
+
+.sidebarTitle {
+    flex: 1;
+    font-size: 0.97rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.sidebarClose {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    cursor: pointer;
+
+    &:hover {
+        background: #f3f4f6;
+        color: #374151;
+    }
+}
+
+.sidebarBody {
+    flex: 1;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 99px; }
+}
+
+.sidebarSection {
+    padding: 14px 18px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.sidebarSectionTitle {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 10px;
+}
+
+.sidebarMeta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.sidebarMetaItem {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.sidebarMetaLabel {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.sidebarMetaValue {
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: #111827;
+}
+
+.sidebarMetaSelect {
+    padding: 5px 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 0.84rem;
+    color: #111827;
+    font-family: inherit;
+    background: #f9fafb;
+    cursor: pointer;
+
+    &:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+    }
+}
+
+.sidebarMetaInput {
+    padding: 5px 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 0.84rem;
+    color: #111827;
+    font-family: inherit;
+    background: #f9fafb;
+
+    &:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+    }
+}
+
+.sidebarDescTextarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #e5e7eb;
+    font-size: 0.84rem;
+    color: #111827;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 90px;
+    background: #f9fafb;
+    box-sizing: border-box;
+    line-height: 1.6;
+
+    &:focus {
+        outline: none;
+        border-color: #6366f1;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    &::placeholder { color: #9ca3af; }
+}
+
+.sidebarDesc {
+    font-size: 0.84rem;
+    color: #374151;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    margin: 0;
+}
+
+.sidebarDescEmpty {
+    font-size: 0.84rem;
+    color: #9ca3af;
+    font-style: italic;
+    margin: 0;
+}
+
+.sidebarEmpty {
+    font-size: 0.82rem;
+    color: #9ca3af;
+    margin: 0 0 10px;
+}
+
+.sidebarSubtaskHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+
+    p { margin: 0; }
+}
+
+.sidebarSubtaskProgress {
+    font-size: 0.72rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.sidebarProgressBar {
+    height: 3px;
+    background: #f3f4f6;
+    margin-bottom: 12px;
+    overflow: hidden;
+
+    div {
+        height: 100%;
+        background: #6366f1;
+        transition: width 0.3s ease;
+        min-width: 0;
+    }
+}
+
+.sidebarSubtaskList {
+    list-style: none;
+    margin: 0 0 12px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.sidebarSubtaskItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 6px;
+    border-radius: 6px;
+
+    &:hover {
+        background: #f9fafb;
+
+        .sidebarSubtaskRemove { opacity: 1; }
+    }
+
+    input[type="checkbox"] {
+        width: 15px;
+        height: 15px;
+        cursor: pointer;
+        flex-shrink: 0;
+        accent-color: #6366f1;
+    }
+}
+
+.sidebarSubtaskTitle {
+    font-size: 0.82rem;
+    color: #111827;
+    flex: 1;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.sidebarSubtaskDone {
+    text-decoration: line-through;
+    color: #9ca3af;
+}
+
+.sidebarSubtaskRemove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.1s ease, color 0.1s ease;
+
+    &:hover { color: #dc2626; }
+}
+
+.sidebarAddSubtask {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.sidebarAddSubtaskInput {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid #e5e7eb;
+    font-size: 0.82rem;
+    color: #111827;
+    font-family: inherit;
+    background: #f9fafb;
+
+    &:focus {
+        outline: none;
+        border-color: #6366f1;
+        background: #fff;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+    }
+
+    &::placeholder { color: #9ca3af; }
+}
+
+.sidebarAddSubtaskBtn {
+    padding: 6px 12px;
+    background: #6366f1;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    white-space: nowrap;
+
+    &:hover:not(:disabled) { background: #4f46e5; }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.sidebarFooter {
+    padding: 12px 18px;
+    border-top: 1px solid #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.sidebarSaveBtn {
+    padding: 7px 18px;
+    background: #6366f1;
+    color: #fff;
+    font-size: 0.84rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover:not(:disabled) { background: #4f46e5; }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.sidebarDeleteBtn {
+    padding: 7px 14px;
+    background: transparent;
+    color: #9ca3af;
+    font-size: 0.84rem;
+    font-weight: 500;
+    border: 1px solid #e5e7eb;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+        background: #fef2f2;
+        color: #dc2626;
+        border-color: #fecaca;
+    }
+}
+
+@media (max-width: 640px) {
+    .sidebar {
+        width: 100vw;
+    }
 }

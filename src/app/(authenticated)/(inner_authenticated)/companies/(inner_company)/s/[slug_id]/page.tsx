@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     DndContext,
     closestCenter,
@@ -16,6 +16,7 @@ import {
     arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import Link from 'next/link';
 import {
     CheckCircle,
     Clock,
@@ -25,46 +26,55 @@ import {
     DotsSixVertical,
     Circle,
     ArrowClockwise,
+    ChatsCircle,
 } from '@phosphor-icons/react';
 import styles from '@/styles/pages/companies/company-dashboard.module.scss';
 import { useCompany } from '@/components/companies/CompanyContext';
+import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type TaskStatus = 'todo' | 'in_progress' | 'completed';
+type TaskStatus = 'todo' | 'in_progress' | 'blocked' | 'review' | 'done';
 type TaskPriority = 'high' | 'medium' | 'low';
 
-// ─── Dummy data ───────────────────────────────────────────────────────────────
+type TaskRow = {
+    id: string;
+    title: string;
+    assignee: string;
+    status: TaskStatus;
+    priority: TaskPriority;
+    due: string;
+};
 
-const DUMMY_TASKS = [
-    { id: 1, title: 'Redesign landing page', assignee: 'Alex R.', status: 'in_progress' as TaskStatus, priority: 'high' as TaskPriority, due: 'Apr 10' },
-    { id: 2, title: 'Write Q2 marketing copy', assignee: 'Jordan L.', status: 'todo' as TaskStatus, priority: 'medium' as TaskPriority, due: 'Apr 12' },
-    { id: 3, title: 'Set up staging environment', assignee: 'Sam K.', status: 'completed' as TaskStatus, priority: 'high' as TaskPriority, due: 'Apr 5' },
-    { id: 4, title: 'Conduct user interviews', assignee: 'Morgan C.', status: 'in_progress' as TaskStatus, priority: 'medium' as TaskPriority, due: 'Apr 15' },
-    { id: 5, title: 'Update API documentation', assignee: 'Taylor P.', status: 'todo' as TaskStatus, priority: 'low' as TaskPriority, due: 'Apr 18' },
-];
+type ActivityRow = {
+    id: string;
+    user: string;
+    action: string;
+    time: string;
+};
 
-const DUMMY_ACTIVITY = [
-    { id: 1, user: 'Alex R.', action: 'completed task "Set up staging environment"', time: '12 min ago' },
-    { id: 2, user: 'Jordan L.', action: 'added a comment on "Redesign landing page"', time: '1 hr ago' },
-    { id: 3, user: 'Sam K.', action: 'created workspace "Backend Sprint 3"', time: '3 hrs ago' },
-    { id: 4, user: 'Morgan C.', action: 'invited Taylor P. to the company', time: 'Yesterday' },
-    { id: 5, user: 'Taylor P.', action: 'updated task priority on "Write Q2 marketing copy"', time: '2 days ago' },
-];
+type WorkspaceRow = {
+    id: string;
+    name: string;
+    tasks: number;
+    members: number;
+};
 
-const DUMMY_WORKSPACES = [
-    { id: 1, name: 'Product Design', tasks: 14, members: 4 },
-    { id: 2, name: 'Backend Sprint 3', tasks: 22, members: 3 },
-    { id: 3, name: 'Marketing Q2', tasks: 9, members: 5 },
-];
+type MemberRow = {
+    id: string;
+    name: string;
+    role: 'owner' | 'admin' | 'member';
+    initials: string;
+    color: string;
+};
 
-const DUMMY_MEMBERS = [
-    { id: 1, name: 'Alex Rivera', role: 'owner', initials: 'AR', color: '#6366f1' },
-    { id: 2, name: 'Jordan Lee', role: 'admin', initials: 'JL', color: '#16a34a' },
-    { id: 3, name: 'Sam Kim', role: 'member', initials: 'SK', color: '#d97706' },
-    { id: 4, name: 'Morgan Chen', role: 'member', initials: 'MC', color: '#7c3aed' },
-    { id: 5, name: 'Taylor Park', role: 'member', initials: 'TP', color: '#dc2626' },
-];
+type OverviewStats = {
+    completedTasks: number;
+    openTasks: number;
+    workspaceCount: number;
+    memberCount: number;
+};
 
 // ─── Card definitions ─────────────────────────────────────────────────────────
 
@@ -78,12 +88,16 @@ function StatusPill({ status }: { status: TaskStatus }) {
     const map: Record<TaskStatus, string> = {
         todo: styles.pillTodo,
         in_progress: styles.pillInProgress,
-        completed: styles.pillCompleted,
+        blocked: styles.pillTodo,
+        review: styles.pillInProgress,
+        done: styles.pillCompleted,
     };
     const labels: Record<TaskStatus, string> = {
         todo: 'To Do',
         in_progress: 'In Progress',
-        completed: 'Done',
+        blocked: 'Blocked',
+        review: 'Review',
+        done: 'Done',
     };
     return <span className={`${styles.pill} ${map[status]}`}>{labels[status]}</span>;
 }
@@ -108,16 +122,16 @@ function UserAvatar({ initials, color, size = 28 }: { initials: string; color: s
     );
 }
 
-function StatsCard() {
-    const stats = [
-        { icon: <CheckCircle size={20} weight="fill" />, value: '47', label: 'Tasks completed', color: '#16a34a' },
-        { icon: <Clock size={20} weight="fill" />, value: '12', label: 'Open tasks', color: '#d97706' },
-        { icon: <Buildings size={20} weight="fill" />, value: '3', label: 'Workspaces', color: '#6366f1' },
-        { icon: <Users size={20} weight="fill" />, value: '5', label: 'Members', color: '#2563eb' },
+function StatsCard({ stats }: { stats: OverviewStats }) {
+    const statItems = [
+        { icon: <CheckCircle size={20} weight="fill" />, value: String(stats.completedTasks), label: 'Tasks completed', color: '#16a34a' },
+        { icon: <Clock size={20} weight="fill" />, value: String(stats.openTasks), label: 'Open tasks', color: '#d97706' },
+        { icon: <Buildings size={20} weight="fill" />, value: String(stats.workspaceCount), label: 'Workspaces', color: '#6366f1' },
+        { icon: <Users size={20} weight="fill" />, value: String(stats.memberCount), label: 'Members', color: '#2563eb' },
     ];
     return (
         <div className={styles.statsGrid}>
-            {stats.map((s) => (
+            {statItems.map((s) => (
                 <div key={s.label} className={styles.statItem}>
                     <span className={styles.statIcon} style={{ color: s.color, background: `${s.color}18` }}>
                         {s.icon}
@@ -132,10 +146,14 @@ function StatsCard() {
     );
 }
 
-function TasksCard() {
+function TasksCard({ tasks }: { tasks: TaskRow[] }) {
+    if (tasks.length === 0) {
+        return <p className={styles.companyDescription}>No tasks yet in this company.</p>;
+    }
+
     return (
         <ul className={styles.taskList}>
-            {DUMMY_TASKS.map((t) => (
+            {tasks.map((t) => (
                 <li key={t.id} className={styles.taskItem}>
                     <PriorityDot priority={t.priority} />
                     <span className={styles.taskTitle}>{t.title}</span>
@@ -148,10 +166,14 @@ function TasksCard() {
     );
 }
 
-function ActivityCard() {
+function ActivityCard({ activity }: { activity: ActivityRow[] }) {
+    if (activity.length === 0) {
+        return <p className={styles.companyDescription}>No activity yet.</p>;
+    }
+
     return (
         <ul className={styles.activityList}>
-            {DUMMY_ACTIVITY.map((a) => (
+            {activity.map((a) => (
                 <li key={a.id} className={styles.activityItem}>
                     <span className={styles.activityIconWrap}>
                         <ArrowClockwise size={14} />
@@ -168,11 +190,19 @@ function ActivityCard() {
     );
 }
 
-function WorkspacesCard() {
+function WorkspacesCard({ workspaces, companySlug }: { workspaces: WorkspaceRow[]; companySlug: string }) {
+    if (workspaces.length === 0) {
+        return <p className={styles.companyDescription}>No workspaces yet.</p>;
+    }
+
     return (
         <div className={styles.workspaceGrid}>
-            {DUMMY_WORKSPACES.map((w) => (
-                <div key={w.id} className={styles.workspaceItem}>
+            {workspaces.map((w) => (
+                <Link
+                    key={w.id}
+                    href={`/companies/s/${companySlug}/workspaces/${w.id}`}
+                    className={styles.workspaceItem}
+                >
                     <span className={styles.workspaceIcon}>
                         <Buildings size={16} weight="fill" />
                     </span>
@@ -181,16 +211,20 @@ function WorkspacesCard() {
                         <p className={styles.workspaceMeta}>{w.tasks} tasks · {w.members} members</p>
                     </div>
                     <ArrowRight size={14} className={styles.workspaceArrow} />
-                </div>
+                </Link>
             ))}
         </div>
     );
 }
 
-function MembersCard() {
+function MembersCard({ members }: { members: MemberRow[] }) {
+    if (members.length === 0) {
+        return <p className={styles.companyDescription}>No members found.</p>;
+    }
+
     return (
         <ul className={styles.memberList}>
-            {DUMMY_MEMBERS.map((m) => (
+            {members.map((m) => (
                 <li key={m.id} className={styles.memberItem}>
                     <UserAvatar initials={m.initials} color={m.color} />
                     <div className={styles.memberInfo}>
@@ -241,11 +275,200 @@ function SortableCard({ id, children }: { id: CardId; children: React.ReactNode 
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+function formatRelativeTime(input: string): string {
+    const timestamp = new Date(input).getTime();
+    const seconds = Math.max(1, Math.floor((Date.now() - timestamp) / 1000));
+
+    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return `${Math.floor(seconds / 86400)}d ago`;
+}
+
+function formatDueDate(input: string | null): string {
+    if (!input) return 'No due date';
+
+    return new Date(input).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+    });
+}
+
+function getDisplayName(profile: { first_name: string; last_name: string; user_name: string | null } | undefined): string {
+    if (!profile) return 'Unknown';
+
+    const fullName = `${profile.first_name} ${profile.last_name}`.trim();
+    if (fullName) return fullName;
+    if (profile.user_name) return `@${profile.user_name}`;
+    return 'Unknown';
+}
+
+function getInitials(name: string): string {
+    const parts = name.split(' ').filter(Boolean);
+    if (parts.length === 0) return '??';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+}
+
+function colorFromId(id: string): string {
+    const palette = ['#6366f1', '#16a34a', '#d97706', '#7c3aed', '#dc2626', '#0ea5e9'];
+    let hash = 0;
+    for (let i = 0; i < id.length; i += 1) hash = (hash + id.charCodeAt(i)) % 997;
+    return palette[hash % palette.length];
+}
+
 export default function CompanyPage() {
-    const { name: companyName, description: companyDescription, memberRole } = useCompany();
+    const { id: companyId, slug: companySlug, name: companyName, description: companyDescription, memberRole } = useCompany();
+    const router = useRouter();
     const [order, setOrder] = useState<CardId[]>(DEFAULT_ORDER);
+    const [loading, setLoading] = useState(true);
+    const [tasks, setTasks] = useState<TaskRow[]>([]);
+    const [activity, setActivity] = useState<ActivityRow[]>([]);
+    const [workspaces, setWorkspaces] = useState<WorkspaceRow[]>([]);
+    const [members, setMembers] = useState<MemberRow[]>([]);
+    const [overview, setOverview] = useState<OverviewStats>({
+        completedTasks: 0,
+        openTasks: 0,
+        workspaceCount: 0,
+        memberCount: 0,
+    });
+    const [creatingCompanyChat, setCreatingCompanyChat] = useState(false);
+
+    const supabase = useMemo(() => createClient(), []);
 
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+    useEffect(() => {
+        let isActive = true;
+
+        async function loadDashboardData() {
+            const { data: workspaceRows } = await supabase
+                .from('workspaces')
+                .select('id, name')
+                .eq('company_id', companyId)
+                .order('created_at', { ascending: false });
+
+            const workspaceIds = (workspaceRows ?? []).map((workspace) => workspace.id);
+
+            const [cardsResult, membersResult, activityResult, workspaceMembersResult] = await Promise.all([
+                workspaceIds.length > 0
+                    ? supabase
+                        .from('kanban_cards')
+                        .select('id, title, assignee_id, status, priority, due_date, workspace_id, created_at, updated_at')
+                        .in('workspace_id', workspaceIds)
+                        .order('updated_at', { ascending: false })
+                    : Promise.resolve({ data: [] as Array<{ id: string; title: string; assignee_id: string | null; status: TaskStatus; priority: TaskPriority; due_date: string | null; workspace_id: string; created_at: string; updated_at: string }> }),
+                supabase
+                    .from('company_members')
+                    .select('id, user_id, role')
+                    .eq('company_id', companyId)
+                    .order('joined_at', { ascending: true }),
+                supabase
+                    .from('activity_events')
+                    .select('id, actor_user_id, title, description, created_at')
+                    .eq('company_id', companyId)
+                    .order('created_at', { ascending: false })
+                    .limit(8),
+                workspaceIds.length > 0
+                    ? supabase
+                        .from('workspace_members')
+                        .select('workspace_id, user_id')
+                        .in('workspace_id', workspaceIds)
+                    : Promise.resolve({ data: [] as Array<{ workspace_id: string; user_id: string }> }),
+            ]);
+
+            if (!isActive) return;
+
+            const cards = cardsResult.data ?? [];
+            const companyMembers = membersResult.data ?? [];
+            const activityRows = activityResult.data ?? [];
+            const workspaceMemberRows = workspaceMembersResult.data ?? [];
+
+            const relevantUserIds = new Set<string>();
+            companyMembers.forEach((member) => relevantUserIds.add(member.user_id));
+            cards.forEach((card) => {
+                if (card.assignee_id) relevantUserIds.add(card.assignee_id);
+            });
+            activityRows.forEach((row) => relevantUserIds.add(row.actor_user_id));
+
+            const relevantIds = Array.from(relevantUserIds);
+            const { data: profiles } = relevantIds.length > 0
+                ? await supabase
+                    .from('profiles')
+                    .select('id, first_name, last_name, user_name')
+                    .in('id', relevantIds)
+                : { data: [] };
+
+            const profileByUserId = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+
+            const taskRows: TaskRow[] = cards.slice(0, 8).map((card) => ({
+                id: card.id,
+                title: card.title,
+                assignee: card.assignee_id ? getDisplayName(profileByUserId.get(card.assignee_id)) : 'Unassigned',
+                status: card.status,
+                priority: card.priority,
+                due: formatDueDate(card.due_date),
+            }));
+
+            const activityFeed: ActivityRow[] = activityRows.map((row) => ({
+                id: row.id,
+                user: getDisplayName(profileByUserId.get(row.actor_user_id)),
+                action: row.description || row.title,
+                time: formatRelativeTime(row.created_at),
+            }));
+
+            const workspaceMembers = new Map<string, Set<string>>();
+            workspaceMemberRows.forEach((wm) => {
+                if (!workspaceMembers.has(wm.workspace_id)) {
+                    workspaceMembers.set(wm.workspace_id, new Set());
+                }
+                workspaceMembers.get(wm.workspace_id)?.add(wm.user_id);
+            });
+
+            const workspaceCards = new Map<string, number>();
+            cards.forEach((card) => {
+                workspaceCards.set(card.workspace_id, (workspaceCards.get(card.workspace_id) ?? 0) + 1);
+            });
+
+            const workspaceRowsView: WorkspaceRow[] = (workspaceRows ?? []).map((workspace) => ({
+                id: workspace.id,
+                name: workspace.name,
+                tasks: workspaceCards.get(workspace.id) ?? 0,
+                members: workspaceMembers.get(workspace.id)?.size ?? companyMembers.length,
+            }));
+
+            const memberRows: MemberRow[] = companyMembers.map((member) => {
+                const displayName = getDisplayName(profileByUserId.get(member.user_id));
+                return {
+                    id: member.id,
+                    name: displayName,
+                    role: member.role,
+                    initials: getInitials(displayName),
+                    color: colorFromId(member.user_id),
+                };
+            });
+
+            setTasks(taskRows);
+            setActivity(activityFeed);
+            setWorkspaces(workspaceRowsView);
+            setMembers(memberRows);
+            setOverview({
+                completedTasks: cards.filter((card) => card.status === 'done').length,
+                openTasks: cards.filter((card) => card.status !== 'done').length,
+                workspaceCount: workspaceRowsView.length,
+                memberCount: memberRows.length,
+            });
+            setLoading(false);
+        }
+
+        loadDashboardData();
+        const interval = setInterval(loadDashboardData, 15000);
+
+        return () => {
+            isActive = false;
+            clearInterval(interval);
+        };
+    }, [companyId, supabase]);
 
     function handleDragEnd(event: DragEndEvent) {
         const { active, over } = event;
@@ -259,12 +482,37 @@ export default function CompanyPage() {
     }
 
     const cardContent: Record<CardId, React.ReactNode> = {
-        stats: <StatsCard />,
-        tasks: <TasksCard />,
-        activity: <ActivityCard />,
-        workspaces: <WorkspacesCard />,
-        members: <MembersCard />,
+        stats: <StatsCard stats={overview} />,
+        tasks: <TasksCard tasks={tasks} />,
+        activity: <ActivityCard activity={activity} />,
+        workspaces: <WorkspacesCard workspaces={workspaces} companySlug={companySlug} />,
+        members: <MembersCard members={members} />,
     };
+
+    const canManageCompanyChat = memberRole === 'owner' || memberRole === 'admin';
+
+    async function handleCreateCompanyChat() {
+        if (!canManageCompanyChat || creatingCompanyChat) return;
+        setCreatingCompanyChat(true);
+
+        const response = await fetch('/api/conversations/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: 'company_group',
+                company_slug: companySlug,
+            }),
+        });
+
+        const data = await response.json();
+        setCreatingCompanyChat(false);
+
+        if (!response.ok || !data?.conversation?.id) {
+            return;
+        }
+
+        router.push(`/messages?conversation=${data.conversation.id}`);
+    }
 
     return (
         <div className={styles.page}>
@@ -280,12 +528,26 @@ export default function CompanyPage() {
                         )}
                     </div>
                 </div>
-                <span className={styles.roleBadge}>{memberRole}</span>
+                <div className={styles.pageHeaderActions}>
+                    {canManageCompanyChat && (
+                        <button
+                            className={styles.groupChatBtn}
+                            onClick={handleCreateCompanyChat}
+                            disabled={creatingCompanyChat}
+                        >
+                            <ChatsCircle size={15} weight="fill" />
+                            {creatingCompanyChat ? 'Creating chat...' : 'Create company chat'}
+                        </button>
+                    )}
+                    <span className={styles.roleBadge}>{memberRole}</span>
+                </div>
             </div>
 
             <p className={styles.dragHint}>
                 <DotsSixVertical size={13} /> Drag cards to rearrange your dashboard
             </p>
+
+            {loading && <p className={styles.companyDescription}>Loading live company data...</p>}
 
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={order} strategy={rectSortingStrategy}>

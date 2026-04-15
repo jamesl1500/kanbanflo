@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { UpdateMemberSchema } from "@/lib/schemas/companies/MemberManagementForm";
+import { recordActivityEvent, sendUserNotification } from "@/lib/activity/events";
 
 export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
@@ -73,6 +74,34 @@ export async function POST(request: NextRequest) {
             { error: updateError?.message ?? "Failed to update member role." },
             { status: 500 }
         );
+    }
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "company.member.role_updated",
+        title: "Updated a member role",
+        entityType: "member",
+        entityId: updatedMembership.id,
+        companyId: company_id,
+        metadata: {
+            role,
+        },
+    });
+
+    if (updatedMembership.user_id !== user.id) {
+        await sendUserNotification(supabase, {
+            recipientUserId: updatedMembership.user_id,
+            actorUserId: user.id,
+            notificationType: "company.member.role_updated",
+            title: "Your company role changed",
+            body: `Your role was updated to ${role}.`,
+            entityType: "company",
+            entityId: company_id,
+            companyId: company_id,
+            metadata: {
+                role,
+            },
+        });
     }
 
     return NextResponse.json({ success: true, member: updatedMembership });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
+import { recordActivityEvent } from "@/lib/activity/events";
 
 const CreateCompanySchema = z.object({
     name: z.string().min(2, "Company name must be at least 2 characters").max(80, "Company name must be 80 characters or less"),
@@ -75,6 +76,15 @@ export async function POST(request: NextRequest) {
         // Non-fatal: company was created, membership insert failed — log but don't block
         console.error("Failed to insert company member:", memberError.message);
     }
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "company.created",
+        title: `Created company \"${parsed.data.name}\"`,
+        entityType: "company",
+        entityId: company.id,
+        companyId: company.id,
+    });
 
     return NextResponse.json({ success: true, company }, { status: 201 });
 }

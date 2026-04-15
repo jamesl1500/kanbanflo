@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
+import { recordActivityEvent } from "@/lib/activity/events";
 
 const Schema = z.object({
     id: z.string().uuid(),
@@ -29,6 +30,15 @@ export async function POST(request: NextRequest) {
         .single();
 
     if (error || !list) return NextResponse.json({ error: error?.message ?? "Failed to update list" }, { status: 500 });
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "kanban.list.updated",
+        title: `Updated list \"${list.name}\"`,
+        entityType: "list",
+        entityId: list.id,
+        workspaceId: list.workspace_id,
+    });
 
     return NextResponse.json({ success: true, list });
 }

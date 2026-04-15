@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
+import { recordActivityEvent } from "@/lib/activity/events";
 
 const Schema = z.object({
     workspace_id: z.string().uuid(),
@@ -34,6 +35,15 @@ export async function POST(request: NextRequest) {
         .single();
 
     if (error || !list) return NextResponse.json({ error: error?.message ?? "Failed to create list" }, { status: 500 });
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "kanban.list.created",
+        title: `Created list \"${list.name}\"`,
+        entityType: "list",
+        entityId: list.id,
+        workspaceId: workspace_id,
+    });
 
     return NextResponse.json({ success: true, list }, { status: 201 });
 }

@@ -2,6 +2,7 @@ import { EmailOtpType } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
+import { acceptPendingInvitesForUser } from '@/lib/companies/acceptPendingInvites';
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
 
     if (token_hash && type) {
-        const supabase = await createClient(cookieStore)
+        const supabase = createClient(cookieStore)
 
         const { error } = await supabase.auth.verifyOtp({
             type,
@@ -19,6 +20,17 @@ export async function GET(request: NextRequest) {
         })
 
         if (!error) {
+            const {
+                data: { user },
+            } = await supabase.auth.getUser();
+
+            if (user?.email) {
+                await acceptPendingInvitesForUser(supabase, {
+                    id: user.id,
+                    email: user.email,
+                });
+            }
+
             // Redirect to the success page (e.g., dashboard)
             return NextResponse.redirect(new URL('/verify-email?success=true', request.url))
         }

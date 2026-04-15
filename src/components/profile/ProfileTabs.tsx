@@ -8,39 +8,32 @@ type Tab = 'feed' | 'workspaces' | 'tasks';
 type TaskStatus = 'completed' | 'in_progress' | 'todo';
 type TaskPriority = 'high' | 'medium' | 'low';
 
-type FeedItem =
-    | { id: number; type: 'task_complete'; text: string; workspace: string; time: string }
-    | { id: number; type: 'post'; text: string; time: string; likes: number; comments: number }
-    | { id: number; type: 'joined'; text: string; time: string };
+type FeedItem = {
+    id: string;
+    type: 'task_complete' | 'post' | 'joined';
+    text: string;
+    workspace?: string;
+    time: string;
+    likes?: number;
+    comments?: number;
+};
 
-const DUMMY_FEED: FeedItem[] = [
-    { id: 1, type: 'task_complete', text: 'Completed task "Design homepage mockup"', workspace: 'KanFlow', time: '2 hours ago' },
-    { id: 2, type: 'post', text: 'Finished the sprint planning session — team is aligned on the Q2 roadmap.', time: '5 hours ago', likes: 4, comments: 2 },
-    { id: 3, type: 'task_complete', text: 'Completed task "Set up CI/CD pipeline"', workspace: 'DevOps Alpha', time: '1 day ago' },
-    { id: 4, type: 'joined', text: 'Joined workspace "Marketing Q2"', time: '2 days ago' },
-    { id: 5, type: 'post', text: 'Just hit a 7-day streak. Consistency is the foundation of accountability.', time: '3 days ago', likes: 12, comments: 5 },
-];
+type WorkspaceItem = {
+    id: string;
+    name: string;
+    description: string;
+    members: number;
+    tasks: number;
+};
 
-const DUMMY_WORKSPACES = [
-    { id: 1, name: 'KanFlow', description: 'Main product development workspace.', members: 8, tasks: 34 },
-    { id: 2, name: 'Marketing Q2', description: 'Q2 campaigns, content planning, and brand assets.', members: 5, tasks: 18 },
-    { id: 3, name: 'DevOps Alpha', description: 'Infrastructure provisioning and pipeline automation.', members: 3, tasks: 12 },
-];
-
-const DUMMY_TASKS: Array<{
-    id: number;
+type TaskItem = {
+    id: string;
     title: string;
     workspace: string;
     status: TaskStatus;
     due: string;
     priority: TaskPriority;
-}> = [
-    { id: 1, title: 'Design homepage mockup', workspace: 'KanFlow', status: 'completed', due: 'Apr 2', priority: 'high' },
-    { id: 2, title: 'Write API documentation', workspace: 'KanFlow', status: 'in_progress', due: 'Apr 6', priority: 'medium' },
-    { id: 3, title: 'Set up CI/CD pipeline', workspace: 'DevOps Alpha', status: 'completed', due: 'Apr 1', priority: 'high' },
-    { id: 4, title: 'Create social media content calendar', workspace: 'Marketing Q2', status: 'in_progress', due: 'Apr 8', priority: 'low' },
-    { id: 5, title: 'User testing session prep', workspace: 'KanFlow', status: 'todo', due: 'Apr 10', priority: 'medium' },
-];
+};
 
 const STATUS_LABELS: Record<TaskStatus, string> = {
     completed: 'Completed',
@@ -60,7 +53,13 @@ function getPriorityClass(priority: TaskPriority): string {
     return styles.taskPriorityLow;
 }
 
-export default function ProfileTabs() {
+type ProfileTabsProps = {
+    feed: FeedItem[];
+    workspaces: WorkspaceItem[];
+    tasks: TaskItem[];
+};
+
+export default function ProfileTabs({ feed, workspaces, tasks }: ProfileTabsProps) {
     const [active, setActive] = useState<Tab>('feed');
 
     return (
@@ -89,7 +88,10 @@ export default function ProfileTabs() {
             <div className={styles.profileTabContent}>
                 {active === 'feed' && (
                     <div className={styles.feedList}>
-                        {DUMMY_FEED.map((item) => (
+                        {feed.length === 0 && (
+                            <p className={styles.tabEmpty}>No recent activity yet.</p>
+                        )}
+                        {feed.map((item) => (
                             <div key={item.id} className={styles.feedItem}>
                                 <div className={styles.feedItemIcon}>
                                     {item.type === 'task_complete' && (
@@ -114,7 +116,7 @@ export default function ProfileTabs() {
                                             <Clock size={11} />
                                             {item.time}
                                         </span>
-                                        {item.type === 'post' && (
+                                        {item.type === 'post' && typeof item.likes === 'number' && (
                                             <span className={styles.feedItemLikes}>
                                                 <ThumbsUp size={11} />
                                                 {item.likes}
@@ -129,7 +131,10 @@ export default function ProfileTabs() {
 
                 {active === 'workspaces' && (
                     <div className={styles.workspaceGrid}>
-                        {DUMMY_WORKSPACES.map((ws) => (
+                        {workspaces.length === 0 && (
+                            <p className={styles.tabEmpty}>No workspaces found.</p>
+                        )}
+                        {workspaces.map((ws) => (
                             <div key={ws.id} className={styles.workspaceCard}>
                                 <div className={styles.workspaceCardHeader}>
                                     <Buildings size={18} weight="fill" color="#0070f3" />
@@ -148,7 +153,10 @@ export default function ProfileTabs() {
 
                 {active === 'tasks' && (
                     <div className={styles.taskList}>
-                        {DUMMY_TASKS.map((task) => (
+                        {tasks.length === 0 && (
+                            <p className={styles.tabEmpty}>No assigned tasks yet.</p>
+                        )}
+                        {tasks.map((task) => (
                             <div key={task.id} className={styles.taskItem}>
                                 <span
                                     className={`${styles.taskStatus} ${getStatusClass(task.status)}`}

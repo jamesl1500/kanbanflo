@@ -27,10 +27,10 @@ export default async function SignupPage({ searchParams }: Props) {
             {/* Left panel */}
             <aside className={styles.panel}>
                 <div className={styles.panelContent}>
-                    <div className={styles.logo}>KanFlow</div>
+                    <div className={styles.logo}>Kanbanflo</div>
                     <h1>Organize your work, flow with ease.</h1>
                     <p>
-                        KanFlow brings your tasks, boards, and team together in one
+                        Kanbanflo brings your tasks, boards, and team together in one
                         focused workspace.
                     </p>
                 </div>

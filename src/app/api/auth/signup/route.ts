@@ -23,6 +23,10 @@ export async function POST(request: NextRequest) {
   }
 
   const { firstName, lastName, email, password } = parsed.data
+  const emailRedirectTo = new URL(
+    "/api/auth/verify-email",
+    process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin
+  ).toString()
 
   const cookieStore = await cookies()
   const supabase = createClient(cookieStore)
@@ -31,7 +35,7 @@ export async function POST(request: NextRequest) {
     email,
     password,
     options: {
-      emailRedirectTo: "/api/auth/verify-email",
+      emailRedirectTo,
       data: { first_name: firstName, last_name: lastName },
     },
   })

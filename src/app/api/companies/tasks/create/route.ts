@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { CreateTaskSchema } from "@/lib/schemas/tasks/TaskForm";
+import { recordActivityEvent } from "@/lib/activity/events";
 
 export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
@@ -85,6 +86,22 @@ export async function POST(request: NextRequest) {
     if (insertError || !task) {
         return NextResponse.json({ error: insertError?.message ?? "Failed to create task" }, { status: 500 });
     }
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "task.created",
+        title: `Created task \"${body.title}\"`,
+        entityType: "task",
+        entityId: task.id,
+        companyId: company.id,
+        workspaceId: body.workspace_id,
+        cardId: task.id,
+        metadata: {
+            list_id: body.list_id,
+            priority: body.priority,
+            status: body.status,
+        },
+    });
 
     return NextResponse.json({ success: true, task }, { status: 201 });
 }

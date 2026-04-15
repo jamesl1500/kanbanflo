@@ -114,7 +114,7 @@ export default function CompanySettingsPage() {
                                 URL slug <span className={styles.required}>*</span>
                             </Label>
                             <div className={styles.slugInputWrapper}>
-                                <span className={styles.slugPrefix}>kanflow.app/</span>
+                                <span className={styles.slugPrefix}>kanbanflo.com/companies/s/</span>
                                 <Input
                                     id="slug"
                                     placeholder="acme-corp"

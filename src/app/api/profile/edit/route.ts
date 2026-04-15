@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
+import { recordActivityEvent } from "@/lib/activity/events";
 
 const EditProfileSchema = z.object({
     first_name: z.string().min(1, "First name is required").max(50),
@@ -64,6 +65,14 @@ export async function POST(request: NextRequest) {
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "profile.updated",
+        title: "Updated profile settings",
+        entityType: "profile",
+        entityId: user.id,
+    });
 
     return NextResponse.json({ success: true });
 }

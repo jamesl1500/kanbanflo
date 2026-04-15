@@ -31,6 +31,7 @@ export const UpdateTaskSchema = z.object({
     company_slug: z.string().min(2).max(80),
     workspace_id: z.string().uuid("Invalid workspace").optional(),
     list_id: z.string().uuid("Invalid list").optional(),
+    assignee_id: z.string().uuid("Invalid assignee").optional().nullable(),
     title: z.string().min(1).max(200).optional(),
     description: z.string().max(4000).optional().nullable(),
     priority: TaskPrioritySchema.optional(),

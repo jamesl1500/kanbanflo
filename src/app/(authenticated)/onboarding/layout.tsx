@@ -9,7 +9,7 @@ export default function OnboardingLayout({
     return (
         <div className={styles.layout}>
             <nav className={styles.nav}>
-                <span>KanFlow</span>
+                <span>Kanbanflo</span>
                 <p>Setting up your account</p>
             </nav>
             {children}

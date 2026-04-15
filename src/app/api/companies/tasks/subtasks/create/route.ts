@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { CreateSubtaskSchema } from "@/lib/schemas/tasks/SubtaskForm";
+import { recordActivityEvent } from "@/lib/activity/events";
 
 export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
@@ -80,6 +81,17 @@ export async function POST(request: NextRequest) {
     if (createError || !subtask) {
         return NextResponse.json({ error: createError?.message ?? "Failed to create subtask" }, { status: 500 });
     }
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "subtask.created",
+        title: `Created subtask \"${subtask.title}\"`,
+        entityType: "subtask",
+        entityId: subtask.id,
+        companyId: company.id,
+        workspaceId: workspace.id,
+        cardId: card.id,
+    });
 
     return NextResponse.json({ success: true, subtask }, { status: 201 });
 }

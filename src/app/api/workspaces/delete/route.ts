@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
+import { recordActivityEvent } from "@/lib/activity/events";
 
 const DeleteWorkspaceSchema = z.object({
     id: z.string().uuid("Invalid workspace ID"),
@@ -56,6 +57,15 @@ export async function POST(request: NextRequest) {
     if (deleteError) {
         return NextResponse.json({ error: deleteError.message }, { status: 500 });
     }
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "workspace.deleted",
+        title: "Deleted a workspace",
+        entityType: "workspace",
+        entityId: parsed.data.id,
+        companyId: workspace.company_id,
+    });
 
     return NextResponse.json({ success: true });
 }

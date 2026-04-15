@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { InviteMemberSchema } from "@/lib/schemas/companies/InviteMemberForm";
 import { Resend } from "resend";
+import { recordActivityEvent, sendUserNotification } from "@/lib/activity/events";
 
 export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
@@ -40,11 +41,19 @@ export async function POST(request: NextRequest) {
     if (parsed.data.invite_method === "username") {
         const { user_name } = parsed.data;
 
-        const { data: targetProfile } = await supabase
-            .from("profiles")
-            .select("id, user_name")
-            .eq("user_name", user_name)
-            .maybeSingle();
+        const { data: targetProfiles, error: targetProfileError } = await supabase.rpc(
+            "find_profile_by_username",
+            { p_user_name: user_name }
+        );
+
+        if (targetProfileError) {
+            return NextResponse.json(
+                { error: targetProfileError.message },
+                { status: 500 }
+            );
+        }
+
+        const targetProfile = targetProfiles?.[0];
 
         if (!targetProfile) {
             return NextResponse.json(
@@ -82,6 +91,35 @@ export async function POST(request: NextRequest) {
                 { error: insertError?.message ?? "Failed to invite member" },
                 { status: 500 }
             );
+        }
+
+        await recordActivityEvent(supabase, {
+            actorUserId: user.id,
+            activityType: "company.member.added",
+            title: `Added @${targetProfile.user_name} to a company`,
+            entityType: "member",
+            entityId: insertedMembership.id,
+            companyId: company_id,
+            metadata: {
+                role,
+                invite_method: "username",
+            },
+        });
+
+        if (targetProfile.id !== user.id) {
+            await sendUserNotification(supabase, {
+                recipientUserId: targetProfile.id,
+                actorUserId: user.id,
+                notificationType: "company.member.added",
+                title: "You were added to a company",
+                body: "A company admin added you as a member.",
+                entityType: "company",
+                entityId: company_id,
+                companyId: company_id,
+                metadata: {
+                    role,
+                },
+            });
         }
 
         return NextResponse.json(
@@ -136,6 +174,19 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         );
     }
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "company.invite.sent",
+        title: `Invited ${email} to a company`,
+        entityType: "company_invite",
+        entityId: insertedInvite.id,
+        companyId: company_id,
+        metadata: {
+            role,
+            invite_method: "email",
+        },
+    });
 
     // Initiate resend
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";

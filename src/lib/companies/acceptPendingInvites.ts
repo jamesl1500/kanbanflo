@@ -1,5 +1,6 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
+import { recordActivityEvent, sendUserNotification } from "@/lib/activity/events";
 
 type AppSupabaseClient = SupabaseClient<Database>;
 
@@ -12,7 +13,7 @@ export async function acceptPendingInvitesForUser(
 
     const { data: pendingInvites } = await supabase
         .from("company_invites")
-        .select("id, company_id, role")
+        .select("id, company_id, role, invited_by_user_id")
         .eq("invited_email", normalizedEmail)
         .eq("status", "pending")
         .gt("expires_at", new Date().toISOString())
@@ -61,5 +62,39 @@ export async function acceptPendingInvitesForUser(
             })
             .in("id", acceptedInviteIds)
             .eq("status", "pending");
+
+        const acceptedInvites = pendingInvites.filter((invite) => acceptedInviteIds.includes(invite.id));
+
+        await Promise.all(
+            acceptedInvites.map(async (invite) => {
+                await recordActivityEvent(supabase, {
+                    actorUserId: user.id,
+                    activityType: "company.invite.accepted",
+                    title: "Accepted a company invite",
+                    entityType: "company",
+                    entityId: invite.company_id,
+                    companyId: invite.company_id,
+                    metadata: {
+                        role: invite.role,
+                    },
+                });
+
+                if (invite.invited_by_user_id && invite.invited_by_user_id !== user.id) {
+                    await sendUserNotification(supabase, {
+                        recipientUserId: invite.invited_by_user_id,
+                        actorUserId: user.id,
+                        notificationType: "company.invite.accepted",
+                        title: "Your company invite was accepted",
+                        body: "A user accepted your invitation and joined the company.",
+                        entityType: "company",
+                        entityId: invite.company_id,
+                        companyId: invite.company_id,
+                        metadata: {
+                            role: invite.role,
+                        },
+                    });
+                }
+            })
+        );
     }
 }

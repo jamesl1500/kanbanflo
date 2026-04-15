@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
+import { recordActivityEvent } from "@/lib/activity/events";
 
 // ordered_ids is just the cards in the target list in new order
 const Schema = z.object({
@@ -21,11 +22,41 @@ export async function POST(request: NextRequest) {
 
     const { list_id, ordered_ids } = parsed.data;
 
-    const updates = ordered_ids.map((id, index) =>
-        supabase.from("kanban_cards").update({ list_id, position: index }).eq("id", id)
-    );
+    // Two-phase reorder avoids transient position collisions and surfaces DB/RLS errors.
+    for (let index = 0; index < ordered_ids.length; index += 1) {
+        const id = ordered_ids[index];
+        const { error } = await supabase
+            .from("kanban_cards")
+            .update({ list_id, position: -(index + 1) })
+            .eq("id", id);
 
-    await Promise.all(updates);
+        if (error) {
+            return NextResponse.json({ error: error.message }, { status: 400 });
+        }
+    }
+
+    for (let index = 0; index < ordered_ids.length; index += 1) {
+        const id = ordered_ids[index];
+        const { error } = await supabase
+            .from("kanban_cards")
+            .update({ list_id, position: index })
+            .eq("id", id);
+
+        if (error) {
+            return NextResponse.json({ error: error.message }, { status: 400 });
+        }
+    }
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "kanban.card.reordered",
+        title: "Reordered cards",
+        entityType: "list",
+        entityId: list_id,
+        metadata: {
+            ordered_ids,
+        },
+    });
 
     return NextResponse.json({ success: true });
 }

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { UpdateTaskSchema } from "@/lib/schemas/tasks/TaskForm";
 import type { TablesUpdate } from "@/types/database";
+import { recordActivityEvent, sendUserNotification } from "@/lib/activity/events";
 
 export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     const { data: existing } = await supabase
         .from("kanban_cards")
-        .select("id, workspace_id")
+        .select("id, workspace_id, assignee_id, title")
         .eq("id", id)
         .maybeSingle();
 
@@ -87,8 +88,22 @@ export async function POST(request: NextRequest) {
         }
     }
 
+    if (updates.assignee_id !== undefined && updates.assignee_id !== null) {
+        const { data: assigneeMembership } = await supabase
+            .from("company_members")
+            .select("id")
+            .eq("company_id", company.id)
+            .eq("user_id", updates.assignee_id)
+            .maybeSingle();
+
+        if (!assigneeMembership) {
+            return NextResponse.json({ error: "Selected assignee is not a member of this company" }, { status: 400 });
+        }
+    }
+
     const normalized: TablesUpdate<"kanban_cards"> = {
         ...updates,
+        assignee_id: updates.assignee_id === undefined ? undefined : updates.assignee_id ?? null,
         description: updates.description === undefined ? undefined : updates.description ?? null,
         due_date: updates.due_date === undefined ? undefined : updates.due_date ?? null,
         estimate_points: updates.estimate_points === undefined ? undefined : updates.estimate_points ?? null,
@@ -119,6 +134,52 @@ export async function POST(request: NextRequest) {
 
     if (updateError || !task) {
         return NextResponse.json({ error: updateError?.message ?? "Failed to update task" }, { status: 500 });
+    }
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "task.updated",
+        title: `Updated task \"${updates.title ?? existing.title}\"`,
+        entityType: "task",
+        entityId: task.id,
+        companyId: company.id,
+        workspaceId: nextWorkspaceId,
+        cardId: task.id,
+        metadata: {
+            changed_fields: Object.keys(updates),
+        },
+    });
+
+    const nextAssigneeId = normalized.assignee_id === undefined ? existing.assignee_id : normalized.assignee_id;
+
+    if (existing.assignee_id && existing.assignee_id !== nextAssigneeId && existing.assignee_id !== user.id) {
+        await sendUserNotification(supabase, {
+            recipientUserId: existing.assignee_id,
+            actorUserId: user.id,
+            notificationType: "task.unassigned",
+            title: "You were unassigned from a task",
+            body: `You were removed from \"${updates.title ?? existing.title}\".`,
+            entityType: "task",
+            entityId: task.id,
+            companyId: company.id,
+            workspaceId: nextWorkspaceId,
+            cardId: task.id,
+        });
+    }
+
+    if (nextAssigneeId && nextAssigneeId !== existing.assignee_id && nextAssigneeId !== user.id) {
+        await sendUserNotification(supabase, {
+            recipientUserId: nextAssigneeId,
+            actorUserId: user.id,
+            notificationType: "task.assigned",
+            title: "You were assigned to a task",
+            body: `You were assigned to \"${updates.title ?? existing.title}\".`,
+            entityType: "task",
+            entityId: task.id,
+            companyId: company.id,
+            workspaceId: nextWorkspaceId,
+            cardId: task.id,
+        });
     }
 
     return NextResponse.json({ success: true, task });

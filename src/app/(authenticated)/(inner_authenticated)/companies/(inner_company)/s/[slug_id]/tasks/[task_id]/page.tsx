@@ -37,7 +37,7 @@ export default async function TaskDetailsPage({ params }: Props) {
 
     const { data: task } = await supabase
         .from("kanban_cards")
-        .select("id, title, description, priority, status, due_date, estimate_points, workspace_id, list_id, tags")
+        .select("id, title, description, priority, status, due_date, estimate_points, workspace_id, list_id, tags, assignee_id")
         .eq("id", task_id)
         .maybeSingle();
 
@@ -62,6 +62,39 @@ export default async function TaskDetailsPage({ params }: Props) {
         .order("name", { ascending: true });
 
     const workspaceIds = (workspaces ?? []).map((workspace) => workspace.id);
+
+    const { data: companyMembers } = await supabase
+        .from("company_members")
+        .select("user_id")
+        .eq("company_id", company.id);
+
+    const memberIds = (companyMembers ?? []).map((member) => member.user_id);
+    let assigneeOptions: { id: string; label: string }[] = [];
+
+    if (memberIds.length > 0) {
+        const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, first_name, last_name, user_name")
+            .in("id", memberIds);
+
+        const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+
+        assigneeOptions = memberIds.map((memberId) => {
+            const profile = profileById.get(memberId);
+            if (!profile) {
+                return { id: memberId, label: `Member ${memberId.slice(0, 8)}` };
+            }
+
+            const fullName = `${profile.first_name} ${profile.last_name}`.trim();
+            const username = profile.user_name ? `@${profile.user_name}` : null;
+            return {
+                id: profile.id,
+                label: username ? `${fullName} (${username})` : fullName,
+            };
+        });
+
+        assigneeOptions.sort((a, b) => a.label.localeCompare(b.label));
+    }
 
     const [{ data: lists }, { data: subtasks }] = await Promise.all([
         supabase
@@ -96,6 +129,7 @@ export default async function TaskDetailsPage({ params }: Props) {
                 workspaces={workspaces ?? []}
                 lists={lists ?? []}
                 subtasks={subtasks ?? []}
+                assigneeOptions={assigneeOptions}
             />
         </div>
     );

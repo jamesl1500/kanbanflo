@@ -4,52 +4,55 @@ import { useEffect, useRef, useState } from 'react';
 import { Bell, CheckCircle, UserPlus, Buildings } from '@phosphor-icons/react';
 import styles from '@/styles/shared/headers/header-dropdowns.module.scss';
 
-const NOTIFICATIONS = [
-    {
-        id: 1,
-        unread: true,
-        icon: <UserPlus size={16} weight="fill" color="#2563eb" />,
-        iconBg: '#dbeafe',
-        text: <><strong>Alex Rivera</strong> sent you a friend request.</>,
-        time: '2 min ago',
-    },
-    {
-        id: 2,
-        unread: true,
-        icon: <CheckCircle size={16} weight="fill" color="#16a34a" />,
-        iconBg: '#dcfce7',
-        text: <><strong>Jordan Lee</strong> completed a task you assigned: "Design homepage".</>,
-        time: '18 min ago',
-    },
-    {
-        id: 3,
-        unread: true,
+type NotificationItem = {
+    id: string;
+    title: string;
+    body: string | null;
+    is_read: boolean;
+    created_at: string;
+    notification_type: string;
+};
+
+function formatRelativeTime(input: string): string {
+    const timestamp = new Date(input).getTime();
+    const seconds = Math.max(1, Math.floor((Date.now() - timestamp) / 1000));
+
+    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return `${Math.floor(seconds / 86400)}d ago`;
+}
+
+function getNotificationIcon(type: string) {
+    if (type.includes('member')) {
+        return {
+            icon: <UserPlus size={16} weight="fill" color="#2563eb" />,
+            iconBg: '#dbeafe',
+        };
+    }
+
+    if (type.includes('task')) {
+        return {
+            icon: <CheckCircle size={16} weight="fill" color="#16a34a" />,
+            iconBg: '#dcfce7',
+        };
+    }
+
+    return {
         icon: <Buildings size={16} weight="fill" color="#d97706" />,
         iconBg: '#fef3c7',
-        text: <>You were added to workspace <strong>Marketing Q2</strong>.</>,
-        time: '1 hr ago',
-    },
-    {
-        id: 4,
-        unread: false,
-        icon: <CheckCircle size={16} weight="fill" color="#16a34a" />,
-        iconBg: '#dcfce7',
-        text: <><strong>Sam Kim</strong> marked task "Write API docs" as complete.</>,
-        time: '3 hrs ago',
-    },
-    {
-        id: 5,
-        unread: false,
-        icon: <UserPlus size={16} weight="fill" color="#2563eb" />,
-        iconBg: '#dbeafe',
-        text: <><strong>Morgan Chen</strong> accepted your friend request.</>,
-        time: 'Yesterday',
-    },
-];
+    };
+}
 
-export default function NotificationsDropdown() {
+export default function NotificationsDropdown({
+    initialNotifications,
+}: {
+    initialNotifications: NotificationItem[];
+}) {
     const [open, setOpen] = useState(false);
-    const [notifications, setNotifications] = useState(NOTIFICATIONS);
+    const [notifications, setNotifications] = useState(
+        initialNotifications.map((item) => ({ ...item, unread: !item.is_read }))
+    );
     const ref = useRef<HTMLDivElement>(null);
 
     const unreadCount = notifications.filter((n) => n.unread).length;
@@ -64,8 +67,26 @@ export default function NotificationsDropdown() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    function markAllRead() {
+    async function markAllRead() {
         setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+
+        await fetch('/api/notifications/read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mark_all: true }),
+        });
+    }
+
+    async function markOneRead(id: string) {
+        setNotifications((prev) =>
+            prev.map((x) => (x.id === id ? { ...x, unread: false } : x))
+        );
+
+        await fetch('/api/notifications/read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notification_id: id }),
+        });
     }
 
     return (
@@ -101,21 +122,20 @@ export default function NotificationsDropdown() {
                                 <div
                                     key={n.id}
                                     className={`${styles.notifItem}${n.unread ? ' ' + styles.unread : ''}`}
-                                    onClick={() =>
-                                        setNotifications((prev) =>
-                                            prev.map((x) => (x.id === n.id ? { ...x, unread: false } : x))
-                                        )
-                                    }
+                                    onClick={() => markOneRead(n.id)}
                                 >
                                     <div
                                         className={styles.notifIcon}
-                                        style={{ background: n.iconBg }}
+                                        style={{ background: getNotificationIcon(n.notification_type).iconBg }}
                                     >
-                                        {n.icon}
+                                        {getNotificationIcon(n.notification_type).icon}
                                     </div>
                                     <div className={styles.notifBody}>
-                                        <p className={styles.notifText}>{n.text}</p>
-                                        <span className={styles.notifTime}>{n.time}</span>
+                                        <p className={styles.notifText}>
+                                            <strong>{n.title}</strong>
+                                            {n.body ? ` ${n.body}` : ''}
+                                        </p>
+                                        <span className={styles.notifTime}>{formatRelativeTime(n.created_at)}</span>
                                     </div>
                                     {n.unread && <div className={styles.unreadDot} />}
                                 </div>

@@ -204,7 +204,7 @@ export default async function DashboardPage() {
                     <span className={styles.statIcon}><CheckSquare size={18} weight="duotone" /></span>
                     <div>
                         <p className={styles.statValue}>{cards.length}</p>
-                        <p className={styles.statLabel}>Total cards/tasks</p>
+                        <p className={styles.statLabel}>Total tasks</p>
                     </div>
                 </article>
                 <article className={styles.statCard}>
@@ -234,17 +234,19 @@ export default async function DashboardPage() {
                 <section className={styles.panel}>
                     <div className={styles.panelHeader}>
                         <h2>Upcoming due tasks</h2>
-                        <span>Next 8 cards with due dates</span>
+                        <span>Next 8 tasks with due dates</span>
                     </div>
 
                     {upcomingCards.length === 0 ? (
-                        <p className={styles.emptyText}>No upcoming due cards yet.</p>
+                        <p className={styles.emptyText}>No upcoming due tasks yet.</p>
                     ) : (
                         <ul className={styles.upcomingList}>
                             {upcomingCards.map((card) => (
                                 <li key={card.id} className={styles.upcomingItem}>
                                     <div className={styles.upcomingMain}>
-                                        <p className={styles.upcomingTitle}>{card.title}</p>
+                                        <Link href={`/companies/s/${card.companySlug}/tasks/${card.id}`} className={styles.upcomingTitle}>
+                                            {card.title}
+                                        </Link>
                                         <p className={styles.upcomingMeta}>
                                             {card.companyName} · {card.workspaceName} · {card.listName}
                                         </p>
@@ -338,7 +340,9 @@ export default async function DashboardPage() {
                         <ul className={styles.recentList}>
                             {recentCards.map((card) => (
                                 <li key={card.id} className={styles.recentItem}>
-                                    <p className={styles.recentTitle}>{card.title}</p>
+                                    <Link href={`/companies/s/${card.companySlug}/tasks/${card.id}`} className={styles.recentTitle}>
+                                        {card.title}
+                                    </Link>
                                     <p className={styles.recentMeta}>
                                         {card.companyName} · {card.workspaceName}
                                     </p>

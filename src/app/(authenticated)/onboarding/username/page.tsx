@@ -26,7 +26,7 @@ export default async function UsernamePage() {
 
                 <div className={styles.header}>
                     <h1>Choose your username</h1>
-                    <p>This is how others will find and mention you across KanFlow.</p>
+                    <p>This is how others will find and mention you across Kanbanflo.</p>
                 </div>
 
                 <UsernameForm />

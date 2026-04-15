@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { DeleteSubtaskSchema } from "@/lib/schemas/tasks/SubtaskForm";
+import { recordActivityEvent } from "@/lib/activity/events";
 
 export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
@@ -78,6 +79,17 @@ export async function POST(request: NextRequest) {
     if (deleteError) {
         return NextResponse.json({ error: deleteError.message }, { status: 500 });
     }
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "subtask.deleted",
+        title: "Deleted a subtask",
+        entityType: "subtask",
+        entityId: id,
+        companyId: company.id,
+        workspaceId: workspace.id,
+        cardId: card.id,
+    });
 
     return NextResponse.json({ success: true });
 }

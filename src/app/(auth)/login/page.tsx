@@ -9,7 +9,7 @@ export default function LoginPage() {
       <Card className={styles.card}>
         <CardHeader className={styles.header}>
           <CardTitle>Welcome back</CardTitle>
-          <CardDescription>Sign in to your KanFlow account</CardDescription>
+          <CardDescription>Sign in to your Kanbanflo account</CardDescription>
         </CardHeader>
         <CardContent>
           <LoginForm />

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
+import { recordActivityEvent } from "@/lib/activity/events";
 
 const CreateWorkspaceSchema = z.object({
     company_id: z.string().uuid("Invalid company ID"),
@@ -51,6 +52,16 @@ export async function POST(request: NextRequest) {
     if (insertError || !workspace) {
         return NextResponse.json({ error: insertError?.message ?? "Failed to create workspace" }, { status: 500 });
     }
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "workspace.created",
+        title: `Created workspace \"${workspace.name}\"`,
+        entityType: "workspace",
+        entityId: workspace.id,
+        companyId: parsed.data.company_id,
+        workspaceId: workspace.id,
+    });
 
     return NextResponse.json({ success: true, workspace }, { status: 201 });
 }

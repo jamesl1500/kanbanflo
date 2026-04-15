@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { RemoveMemberSchema } from "@/lib/schemas/companies/MemberManagementForm";
+import { recordActivityEvent, sendUserNotification } from "@/lib/activity/events";
 
 export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
@@ -89,6 +90,26 @@ export async function POST(request: NextRequest) {
     if (deleteError) {
         return NextResponse.json({ error: deleteError.message }, { status: 500 });
     }
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "company.member.removed",
+        title: "Removed a company member",
+        entityType: "member",
+        entityId: member_id,
+        companyId: company_id,
+    });
+
+    await sendUserNotification(supabase, {
+        recipientUserId: targetMembership.user_id,
+        actorUserId: user.id,
+        notificationType: "company.member.removed",
+        title: "You were removed from a company",
+        body: "A company admin removed your access.",
+        entityType: "company",
+        entityId: company_id,
+        companyId: company_id,
+    });
 
     return NextResponse.json({ success: true });
 }

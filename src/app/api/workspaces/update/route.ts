@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
+import { recordActivityEvent } from "@/lib/activity/events";
 
 const UpdateWorkspaceSchema = z.object({
     id: z.string().uuid("Invalid workspace ID"),
@@ -68,6 +69,19 @@ export async function POST(request: NextRequest) {
     if (updateError || !updated) {
         return NextResponse.json({ error: updateError?.message ?? "Failed to update workspace" }, { status: 500 });
     }
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "workspace.updated",
+        title: `Updated workspace \"${updated.name}\"`,
+        entityType: "workspace",
+        entityId: updated.id,
+        companyId: workspace.company_id,
+        workspaceId: updated.id,
+        metadata: {
+            status: updated.status,
+        },
+    });
 
     return NextResponse.json({ success: true, workspace: updated });
 }

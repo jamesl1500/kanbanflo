@@ -3,7 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { GearSix } from "@phosphor-icons/react/dist/ssr";
-import WorkspaceKanban from "@/components/workspaces/WorkspaceKanban";
+import WorkspaceKanbanClientOnly from "@/components/workspaces/WorkspaceKanbanClientOnly";
 import styles from "@/styles/pages/companies/workspace-kanban.module.scss";
 
 interface Props {
@@ -61,9 +61,11 @@ export default async function WorkspaceKanbanPage({ params }: Props) {
         .eq("workspace_id", workspace_id)
         .order("position", { ascending: true });
 
-    const canEdit =
+    const canManageWorkspace =
         workspace.owner_id === user.id ||
         ["owner", "admin"].includes(membership.role);
+
+    const canEditCards = Boolean(membership);
 
     return (
         <div className={styles.page}>
@@ -74,7 +76,7 @@ export default async function WorkspaceKanbanPage({ params }: Props) {
                         <p className={styles.pageDesc}>{workspace.description}</p>
                     )}
                 </div>
-                {canEdit && (
+                {canManageWorkspace && (
                     <Link
                         href={`/companies/s/${slug_id}/workspaces/${workspace_id}/settings`}
                         className={styles.settingsBtn}
@@ -86,11 +88,13 @@ export default async function WorkspaceKanbanPage({ params }: Props) {
                 )}
             </div>
 
-            <WorkspaceKanban
+            <WorkspaceKanbanClientOnly
                 workspaceId={workspace_id}
+                companySlug={slug_id}
                 initialLists={lists ?? []}
                 initialCards={cards ?? []}
-                canEdit={canEdit}
+                canEditCards={canEditCards}
+                canManageLists={canManageWorkspace}
             />
         </div>
     );

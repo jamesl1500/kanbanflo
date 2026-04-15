@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
+import { recordActivityEvent } from "@/lib/activity/events";
 
 const Schema = z.object({
     list_id: z.string().uuid(),
@@ -45,6 +46,19 @@ export async function POST(request: NextRequest) {
         .single();
 
     if (error || !card) return NextResponse.json({ error: error?.message ?? "Failed to create card" }, { status: 500 });
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "kanban.card.created",
+        title: `Created card \"${card.title}\"`,
+        entityType: "card",
+        entityId: card.id,
+        workspaceId: workspace_id,
+        cardId: card.id,
+        metadata: {
+            list_id,
+        },
+    });
 
     return NextResponse.json({ success: true, card }, { status: 201 });
 }

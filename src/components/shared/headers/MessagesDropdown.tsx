@@ -4,59 +4,30 @@ import { useEffect, useRef, useState } from 'react';
 import { ChatCircle } from '@phosphor-icons/react';
 import styles from '@/styles/shared/headers/header-dropdowns.module.scss';
 
-const AVATAR_COLORS = ['#2563eb', '#16a34a', '#d97706', '#7c3aed', '#dc2626'];
+type MessageItem = {
+    id: string;
+    conversation_id: string;
+    unread: boolean;
+    initials: string;
+    color: string;
+    sender: string;
+    preview: string;
+    time: string;
+};
 
-const MESSAGES = [
-    {
-        id: 1,
-        unread: true,
-        initials: 'AR',
-        color: AVATAR_COLORS[0],
-        sender: 'Alex Rivera',
-        preview: 'Hey, did you finish reviewing the sprint board?',
-        time: '4 min ago',
-    },
-    {
-        id: 2,
-        unread: true,
-        initials: 'JL',
-        color: AVATAR_COLORS[1],
-        sender: 'Jordan Lee',
-        preview: 'The design assets are ready to review 🎨',
-        time: '42 min ago',
-    },
-    {
-        id: 3,
-        unread: false,
-        initials: 'SK',
-        color: AVATAR_COLORS[2],
-        sender: 'Sam Kim',
-        preview: 'Can we sync tomorrow morning before standup?',
-        time: '2 hrs ago',
-    },
-    {
-        id: 4,
-        unread: false,
-        initials: 'MC',
-        color: AVATAR_COLORS[3],
-        sender: 'Morgan Chen',
-        preview: 'Thanks for adding me to the workspace!',
-        time: 'Yesterday',
-    },
-    {
-        id: 5,
-        unread: false,
-        initials: 'TP',
-        color: AVATAR_COLORS[4],
-        sender: 'Taylor Park',
-        preview: 'Merged the PR. Deployment is live.',
-        time: '2 days ago',
-    },
-];
+function formatRelativeTime(input: string): string {
+    const timestamp = new Date(input).getTime();
+    const seconds = Math.max(1, Math.floor((Date.now() - timestamp) / 1000));
 
-export default function MessagesDropdown() {
+    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return `${Math.floor(seconds / 86400)}d ago`;
+}
+
+export default function MessagesDropdown({ initialMessages }: { initialMessages: MessageItem[] }) {
     const [open, setOpen] = useState(false);
-    const [messages, setMessages] = useState(MESSAGES);
+    const [messages, setMessages] = useState(initialMessages);
     const ref = useRef<HTMLDivElement>(null);
 
     const unreadCount = messages.filter((m) => m.unread).length;
@@ -71,7 +42,7 @@ export default function MessagesDropdown() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    function openMessage(id: number) {
+    function openMessage(id: string) {
         setMessages((prev) =>
             prev.map((m) => (m.id === id ? { ...m, unread: false } : m))
         );
@@ -126,7 +97,7 @@ export default function MessagesDropdown() {
                                     <div className={styles.messageBody}>
                                         <div className={styles.messageTop}>
                                             <span className={styles.messageSender}>{msg.sender}</span>
-                                            <span className={styles.messageTime}>{msg.time}</span>
+                                            <span className={styles.messageTime}>{formatRelativeTime(msg.time)}</span>
                                         </div>
                                         <p
                                             className={`${styles.messagePreview}${msg.unread ? ' ' + styles.messageUnreadPreview : ''}`}

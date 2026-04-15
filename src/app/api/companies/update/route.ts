@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
+import { recordActivityEvent } from "@/lib/activity/events";
 
 const UpdateCompanySchema = z.object({
     id: z.string().uuid("Invalid company ID"),
@@ -80,6 +81,15 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         );
     }
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "company.updated",
+        title: `Updated company settings for \"${name}\"`,
+        entityType: "company",
+        entityId: updated.id,
+        companyId: updated.id,
+    });
 
     return NextResponse.json({ success: true, company: updated });
 }

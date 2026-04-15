@@ -16,7 +16,7 @@ export default function AuthHeader() {
             <div className={styles.innerHeader}>
                 <div className={styles.branding}>
                     <Link href="/">
-                        <h3>Kanflow</h3>
+                        <h3>Kanbanflo</h3>
                     </Link>
                 </div>
                 <div className={styles.navigation}>

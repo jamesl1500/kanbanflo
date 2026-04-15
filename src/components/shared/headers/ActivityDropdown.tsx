@@ -4,45 +4,57 @@ import { useEffect, useRef, useState } from 'react';
 import { Clock, CheckCircle, Buildings, UserPlus, PencilSimple } from '@phosphor-icons/react';
 import styles from '@/styles/shared/headers/header-dropdowns.module.scss';
 
-const ACTIVITIES = [
-    {
-        id: 1,
-        icon: <CheckCircle size={15} weight="fill" color="#16a34a" />,
-        iconBg: '#dcfce7',
-        text: <>You completed <strong>"Design homepage mockup"</strong> in KanFlow.</>,
-        time: '2 hrs ago',
-    },
-    {
-        id: 2,
-        icon: <PencilSimple size={15} weight="fill" color="#2563eb" />,
-        iconBg: '#dbeafe',
-        text: <>You updated task <strong>"Write API documentation"</strong>.</>,
-        time: '5 hrs ago',
-    },
-    {
-        id: 3,
+type ActivityItem = {
+    id: string;
+    title: string;
+    description: string | null;
+    created_at: string;
+    activity_type: string;
+};
+
+function formatRelativeTime(input: string): string {
+    const timestamp = new Date(input).getTime();
+    const seconds = Math.max(1, Math.floor((Date.now() - timestamp) / 1000));
+
+    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return `${Math.floor(seconds / 86400)}d ago`;
+}
+
+function getActivityIcon(type: string) {
+    if (type.includes('created')) {
+        return {
+            icon: <CheckCircle size={15} weight="fill" color="#16a34a" />,
+            iconBg: '#dcfce7',
+        };
+    }
+
+    if (type.includes('updated') || type.includes('reordered')) {
+        return {
+            icon: <PencilSimple size={15} weight="fill" color="#2563eb" />,
+            iconBg: '#dbeafe',
+        };
+    }
+
+    if (type.includes('member') || type.includes('invite')) {
+        return {
+            icon: <UserPlus size={15} weight="fill" color="#7c3aed" />,
+            iconBg: '#ede9fe',
+        };
+    }
+
+    return {
         icon: <Buildings size={15} weight="fill" color="#d97706" />,
         iconBg: '#fef3c7',
-        text: <>You joined workspace <strong>Marketing Q2</strong>.</>,
-        time: 'Yesterday',
-    },
-    {
-        id: 4,
-        icon: <UserPlus size={15} weight="fill" color="#7c3aed" />,
-        iconBg: '#ede9fe',
-        text: <>You added <strong>Jordan Lee</strong> as a friend.</>,
-        time: 'Yesterday',
-    },
-    {
-        id: 5,
-        icon: <CheckCircle size={15} weight="fill" color="#16a34a" />,
-        iconBg: '#dcfce7',
-        text: <>You completed <strong>"Set up CI/CD pipeline"</strong> in DevOps Alpha.</>,
-        time: '2 days ago',
-    },
-];
+    };
+}
 
-export default function ActivityDropdown() {
+export default function ActivityDropdown({
+    initialActivity,
+}: {
+    initialActivity: ActivityItem[];
+}) {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -74,20 +86,27 @@ export default function ActivityDropdown() {
                         <h3>Your Activity</h3>
                     </div>
                     <div className={styles.dropdownList}>
-                        {ACTIVITIES.map((item) => (
-                            <div key={item.id} className={styles.activityItem}>
-                                <div
-                                    className={styles.activityIconWrap}
-                                    style={{ background: item.iconBg }}
-                                >
-                                    {item.icon}
+                        {initialActivity.length === 0 ? (
+                            <p className={styles.dropdownEmpty}>No activity yet.</p>
+                        ) : (
+                            initialActivity.map((item) => (
+                                <div key={item.id} className={styles.activityItem}>
+                                    <div
+                                        className={styles.activityIconWrap}
+                                        style={{ background: getActivityIcon(item.activity_type).iconBg }}
+                                    >
+                                        {getActivityIcon(item.activity_type).icon}
+                                    </div>
+                                    <div className={styles.activityBody}>
+                                        <p className={styles.activityText}>
+                                            <strong>{item.title}</strong>
+                                            {item.description ? ` ${item.description}` : ''}
+                                        </p>
+                                        <span className={styles.activityTime}>{formatRelativeTime(item.created_at)}</span>
+                                    </div>
                                 </div>
-                                <div className={styles.activityBody}>
-                                    <p className={styles.activityText}>{item.text}</p>
-                                    <span className={styles.activityTime}>{item.time}</span>
-                                </div>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                     <div className={styles.dropdownFooter}>
                         <a href="/activity">View full activity log</a>

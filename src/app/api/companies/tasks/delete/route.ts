@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
+import { recordActivityEvent } from "@/lib/activity/events";
 
 const DeleteTaskSchema = z.object({
     id: z.string().uuid("Invalid task ID"),
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     const { data: task } = await supabase
         .from("kanban_cards")
-        .select("id, workspace_id")
+        .select("id, workspace_id, title")
         .eq("id", id)
         .maybeSingle();
 
@@ -73,6 +74,17 @@ export async function POST(request: NextRequest) {
     if (deleteError) {
         return NextResponse.json({ error: deleteError.message }, { status: 500 });
     }
+
+    await recordActivityEvent(supabase, {
+        actorUserId: user.id,
+        activityType: "task.deleted",
+        title: `Deleted task \"${task.title}\"`,
+        entityType: "task",
+        entityId: task.id,
+        companyId: company.id,
+        workspaceId: task.workspace_id,
+        cardId: task.id,
+    });
 
     return NextResponse.json({ success: true });
 }
