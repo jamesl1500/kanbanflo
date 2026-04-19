@@ -9,6 +9,7 @@ type Conversation = {
     id: string;
     kind: 'direct' | 'group' | 'company_group';
     title: string;
+    created_by: string;
     my_role: 'owner' | 'admin' | 'member';
     company: { id: string; slug: string; name: string } | null;
     members: Array<{ user_id: string; role: string; display_name: string }>;
@@ -66,6 +67,8 @@ export default function MessagesPageClient({ currentUserId }: { currentUserId: s
     const [newMembers, setNewMembers] = useState<string[]>([]);
     const [creatingConversation, setCreatingConversation] = useState(false);
     const [showNewConversationForm, setShowNewConversationForm] = useState(false);
+    const [showMembersModal, setShowMembersModal] = useState(false);
+    const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
 
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -234,6 +237,38 @@ export default function MessagesPageClient({ currentUserId }: { currentUserId: s
 
     const selectedConversation = conversations.find((conversation) => conversation.id === selectedConversationId) ?? null;
     const selectedCompanyContacts = contacts.find((company) => company.slug === newCompanySlug) ?? null;
+    const canManageMembers = Boolean(
+        selectedConversation && (selectedConversation.my_role === 'admin' || selectedConversation.created_by === currentUserId)
+    );
+
+    useEffect(() => {
+        setShowMembersModal(false);
+    }, [selectedConversationId]);
+
+    useEffect(() => {
+        if (!selectedConversationId) return;
+
+        const selectedMembershipChannel = supabase
+            .channel(`conversation-members-list:${selectedConversationId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'conversation_members',
+                    filter: `conversation_id=eq.${selectedConversationId}`,
+                },
+                () => {
+                    refreshConversations();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(selectedMembershipChannel);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedConversationId, supabase]);
 
     function toggleMember(id: string) {
         setNewMembers((prev) => (prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id]));
@@ -276,6 +311,46 @@ export default function MessagesPageClient({ currentUserId }: { currentUserId: s
         setNewTitle('');
         setShowNewConversationForm(false);
         setCreatingConversation(false);
+    }
+
+    async function handleRemoveMember(memberUserId: string) {
+        if (!selectedConversation) return;
+
+        setRemovingMemberId(memberUserId);
+        setErrorText(null);
+
+        try {
+            const response = await fetch('/api/conversations/members/remove', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    conversation_id: selectedConversation.id,
+                    member_user_id: memberUserId,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                setErrorText(data.error ?? 'Unable to remove member.');
+                return;
+            }
+
+            setConversations((prev) =>
+                prev.map((conversation) =>
+                    conversation.id === selectedConversation.id
+                        ? {
+                            ...conversation,
+                            members: conversation.members.filter((member) => member.user_id !== memberUserId),
+                        }
+                        : conversation
+                )
+            );
+
+            await refreshConversations();
+        } finally {
+            setRemovingMemberId(null);
+        }
     }
 
     async function handleSendMessage(e: React.FormEvent) {
@@ -428,7 +503,13 @@ export default function MessagesPageClient({ currentUserId }: { currentUserId: s
                         <>
                             <header className={styles.chatHeader}>
                                 <h2>{selectedConversation.title}</h2>
-                                <span>{selectedConversation.members.length} members</span>
+                                <button
+                                    type="button"
+                                    className={styles.memberCountButton}
+                                    onClick={() => setShowMembersModal(true)}
+                                >
+                                    {selectedConversation.members.length} members
+                                </button>
                             </header>
 
                             <div className={styles.messages}>
@@ -464,6 +545,74 @@ export default function MessagesPageClient({ currentUserId }: { currentUserId: s
                                 </button>
                             </form>
                         </>
+                    )}
+
+                    {showMembersModal && selectedConversation && (
+                        <div className={styles.modalOverlay} onClick={() => setShowMembersModal(false)}>
+                            <div
+                                className={styles.membersModal}
+                                role="dialog"
+                                aria-modal="true"
+                                aria-labelledby="conversation-members-title"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className={styles.membersModalHeader}>
+                                    <div>
+                                        <h3 id="conversation-members-title">Conversation members</h3>
+                                        <p>{selectedConversation.title}</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className={styles.modalCloseButton}
+                                        onClick={() => setShowMembersModal(false)}
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+
+                                <p className={styles.modalNote}>
+                                    {canManageMembers
+                                        ? 'You can remove members from this conversation.'
+                                        : 'Only the conversation creator or an admin can remove members.'}
+                                </p>
+
+                                <div className={styles.modalMembersList}>
+                                    {selectedConversation.members.map((member) => {
+                                        const isCurrentUser = member.user_id === currentUserId;
+                                        const isCreator = member.user_id === selectedConversation.created_by;
+                                        const canRemoveThisMember = canManageMembers && !isCurrentUser && !isCreator;
+
+                                        return (
+                                            <div key={member.user_id} className={styles.modalMemberRow}>
+                                                <div>
+                                                    <strong>{member.display_name}</strong>
+                                                    <div className={styles.modalMemberMeta}>
+                                                        {isCurrentUser && <span>You</span>}
+                                                        {isCreator && <span>Creator</span>}
+                                                        <span>{member.role}</span>
+                                                    </div>
+                                                </div>
+
+                                                {canRemoveThisMember ? (
+                                                    <button
+                                                        type="button"
+                                                        className={styles.removeMemberButton}
+                                                        disabled={removingMemberId === member.user_id}
+                                                        onClick={() => handleRemoveMember(member.user_id)}
+                                                    >
+                                                        {removingMemberId === member.user_id ? 'Removing...' : 'Remove'}
+                                                    </button>
+                                                ) : (
+                                                    <span className={styles.memberBadge}>
+                                                        {isCreator ? 'Protected' : isCurrentUser ? 'You' : member.role}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
                     )}
 
                     {errorText && <p className={styles.error}>{errorText}</p>}

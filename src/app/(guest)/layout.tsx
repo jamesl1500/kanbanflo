@@ -67,7 +67,13 @@ export default function GuestLayout({
                     </div>
 
                     <div className={styles.footerBottom}>
-                        <p>© {year} Kanbanflo. All rights reserved.</p>
+                        <p>
+                            © {year} Kanbanflo. All rights reserved. Created by{' '}
+                            <a href="https://www.lattentechnologies.com" target="_blank" rel="noreferrer">
+                                Latten Technologies, LLC
+                            </a>
+                            .
+                        </p>
                         <div className={styles.footerBottomLinks}>
                             <a href="mailto:privacy@kanbanflo.com">privacy@kanbanflo.com</a>
                             <a href="mailto:legal@kanbanflo.com">legal@kanbanflo.com</a>

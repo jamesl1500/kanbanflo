@@ -17,3 +17,24 @@
     padding: 24px;
     background: #f9fafb;
 }
+
+.appFooter {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+    color: #6b7280;
+    font-size: 0.8rem;
+}
+
+.appFooter p {
+    margin: 0;
+}
+
+.appFooter a {
+    color: #374151;
+    text-decoration: none;
+}
+
+.appFooter a:hover {
+    text-decoration: underline;
+}

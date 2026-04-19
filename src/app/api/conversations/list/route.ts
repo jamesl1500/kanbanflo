@@ -124,6 +124,7 @@ export async function GET() {
             id: conversation.id,
             kind: conversation.kind,
             title: conversation.title ?? (fallbackTitle || "Untitled conversation"),
+            created_by: conversation.created_by,
             company: company
                 ? { id: company.id, slug: company.slug, name: company.name }
                 : null,

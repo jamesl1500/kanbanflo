@@ -192,6 +192,132 @@
     color: #6b7280;
 }
 
+.memberCountButton {
+    border: 1px solid #d1d5db;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    color: #374151;
+    background: #ffffff;
+    cursor: pointer;
+
+    &:hover {
+        background: #f9fafb;
+    }
+}
+
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 50;
+}
+
+.membersModal {
+    width: min(560px, 100%);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.membersModalHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.membersModalHeader h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #111827;
+}
+
+.membersModalHeader p {
+    margin: 4px 0 0;
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.modalCloseButton,
+.removeMemberButton {
+    border: none;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.modalCloseButton {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+.removeMemberButton {
+    background: #b91c1c;
+    color: #ffffff;
+}
+
+.removeMemberButton:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.modalNote {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #4b5563;
+}
+
+.modalMembersList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 320px;
+    overflow: auto;
+}
+
+.modalMemberRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.modalMemberRow strong {
+    display: block;
+    color: #111827;
+    font-size: 0.88rem;
+}
+
+.modalMemberMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.modalMemberMeta span,
+.memberBadge {
+    font-size: 0.74rem;
+    color: #4b5563;
+    background: #f3f4f6;
+    border-radius: 999px;
+    padding: 4px 8px;
+}
+
 .messages {
     flex: 1;
     padding: 14px;

@@ -76,16 +76,6 @@ export default async function WorkspaceKanbanPage({ params }: Props) {
                         <p className={styles.pageDesc}>{workspace.description}</p>
                     )}
                 </div>
-                {canManageWorkspace && (
-                    <Link
-                        href={`/companies/s/${slug_id}/workspaces/${workspace_id}/settings`}
-                        className={styles.settingsBtn}
-                        title="Workspace settings"
-                    >
-                        <GearSix size={17} weight="fill" />
-                        Settings
-                    </Link>
-                )}
             </div>
 
             <WorkspaceKanbanClientOnly

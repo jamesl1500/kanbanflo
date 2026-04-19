@@ -18,6 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Kanbanflo",
   description: "Kanbanflo helps teams plan, assign, and deliver work with clarity.",
+  creator: "Latten Technologies, LLC",
 };
 
 export default function RootLayout({
